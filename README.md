@@ -1,2 +1,2 @@
 # wakamiti-actions
-A collection of reusable GitHub Actions to automate for Wakamiti-based projects.
+A collection of reusable GitHub Actions to automate Wakamiti-based projects.
