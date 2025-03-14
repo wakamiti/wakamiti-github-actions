@@ -9,7 +9,7 @@ on:
 jobs:
   validate:
     name: Validate
-    uses: actions/validate.yml@main
+    uses: .github/workflows/validate.yml@main
     with:
       repo: ${{ github.event.repository.name }}
       working-directory: test
@@ -20,5 +20,5 @@ jobs:
     permissions:
       contents: read
       packages: write
-    uses: actions/snapshot.yml@main
+    uses: .github/workflows/snapshot.yml@main
     secrets: inherit
