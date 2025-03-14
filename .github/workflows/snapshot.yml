@@ -21,9 +21,6 @@ jobs:
           java-version: '17'
           distribution: 'adopt'
           cache: 'maven'
-          server-id: github
-#          server-username: ${{ secrets.DEPLOY_GITHUB_USER }}
-#          server-password: ${{ secrets.DEPLOY_GITHUB_TOKEN }}
 
       - name: Check Snapshot
         working-directory: ${{ inputs.working-directory }}
@@ -35,6 +32,13 @@ jobs:
             echo "DEPLOY=false" >> $GITHUB_ENV
             echo warn: non-snapshot version $version deployment ignored
           fi
+
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
 
       - name: Build and Deploy
         if: env.DEPLOY == 'true'

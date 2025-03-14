@@ -1,6 +1,11 @@
 name: Deploy
 on:
   workflow_call:
+    inputs:
+      working-directory:
+        required: false
+        type: string
+        default: "."
 
 jobs:
   build:
@@ -23,6 +28,7 @@ jobs:
           gpg-passphrase: ${{ secrets.GPG_SECRET_KEY_PASSWORD }}
 
       - name: Check Release
+        working-directory: ${{ inputs.working-directory }}
         run: |
           version=$(mvn -q help:evaluate -Dexpression=project.version -DforceStdout)
           if [[ $version == *-SNAPSHOT ]]; then
@@ -30,5 +36,15 @@ jobs:
             exit 1
           fi
 
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
       - name: Build and Deploy
+        working-directory: ${{ inputs.working-directory }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: mvn --batch-mode deploy -DskipTests
