@@ -23,7 +23,7 @@ jobs:
           cache: 'maven'
           server-id: github
           server-username: wakamiti
-          server-password: ${{ secrets.GITHUB_TOKEN }}
+          server-password: ${{ secrets.DEPLOY_GITHUB_TOKEN }}
 
       - name: Check Snapshot
         run: |
