@@ -1,6 +1,11 @@
 name: Deploy
 on:
   workflow_call:
+    inputs:
+      working-directory:
+        required: false
+        type: string
+        default: "."
 
 jobs:
   build:
@@ -29,7 +34,9 @@ jobs:
             echo "DEPLOY=false" >> $GITHUB_ENV
             echo warn: non-snapshot version $version deployment ignored
           fi
+        working-directory: ${{ inputs.working-directory }}
 
       - name: Build and Deploy
         if: env.DEPLOY == 'true'
         run: mvn deploy -DskipTests
+        working-directory: ${{ inputs.working-directory }}
