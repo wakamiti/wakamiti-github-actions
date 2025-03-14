@@ -32,6 +32,9 @@ jobs:
             echo "DEPLOY=false" >> $GITHUB_ENV
             echo warn: non-snapshot version $version deployment ignored
           fi
+          groupId=$(mvn -q help:evaluate -Dexpression=project.groupId -DforceStdout)
+          artifactId=$(mvn -q help:evaluate -Dexpression=project.artifactId -DforceStdout)
+          echo "PACKAGE=${groupId}.${artifactId}" >> $GITHUB_ENV
 
       - name: Cache Maven packages
         uses: actions/cache@v4
@@ -46,3 +49,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         working-directory: ${{ inputs.working-directory }}
         run: mvn deploy -DskipTests
+
+      - uses: actions/delete-package-versions@v5
+        with:
+          package-name: ${{ env.PACKAGE }}
+          package-type: 'maven'
+          min-versions-to-keep: 1
