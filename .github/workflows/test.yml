@@ -1,0 +1,24 @@
+name: Test
+
+on:
+  workflow_call:
+  push:
+    branches:
+      - main
+
+jobs:
+  validate:
+    name: Validate
+    uses: actions/validate.yml
+    with:
+      repo: ${{ github.event.repository.name }}
+      working-directory: test
+    secrets: inherit
+
+  snapshot:
+    name: Publish Snapshot Package
+    permissions:
+      contents: read
+      packages: write
+    uses: actions/snapshot.yml
+    secrets: inherit
