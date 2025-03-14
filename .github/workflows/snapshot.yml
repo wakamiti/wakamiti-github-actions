@@ -22,7 +22,7 @@ jobs:
           distribution: 'adopt'
           cache: 'maven'
           server-id: github
-          server-username: token
+          server-username: wakamiti
           server-password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check Snapshot
