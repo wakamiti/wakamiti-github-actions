@@ -45,7 +45,7 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
 
       - name: Analyze
-        if: ${{ hashFiles('src/**') != '' }}
+        if: ${{ hashFiles('**/src/**') != '' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
