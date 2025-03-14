@@ -1,0 +1,34 @@
+name: Deploy
+on:
+  workflow_call:
+
+jobs:
+  build:
+    name: Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'adopt'
+          cache: 'maven'
+          server-id: ossrh
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
+          gpg-private-key: ${{ secrets.GPG_SECRET_KEY }}
+          gpg-passphrase: ${{ secrets.GPG_SECRET_KEY_PASSWORD }}
+
+      - name: Check Release
+        run: |
+          version=$(mvn -q help:evaluate -Dexpression=project.version -DforceStdout)
+          if [[ $version == *-SNAPSHOT ]]; then
+            echo error: snapshot version $version deployment not allowed
+            exit 1
+          fi
+
+      - name: Build and Deploy
+        run: mvn --batch-mode deploy -DskipTests
