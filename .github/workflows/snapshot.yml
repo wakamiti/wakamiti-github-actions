@@ -45,6 +45,7 @@ jobs:
 
       - name: Remove old packages
         uses: smartsquaregmbh/delete-old-packages@v0.8.1
+        continue-on-error: true
         with:
           organization: wakamiti
           type: maven
