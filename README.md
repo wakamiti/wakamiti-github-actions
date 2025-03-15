@@ -11,7 +11,7 @@ Ejecuta comprobaciones de validación en el proyecto, como linting, formateo o v
 
 _Ejemplo:_
 ```yaml
-uses: wakamiti/wakamiti-github-actions/actions/validate.yml@main
+uses: wakamiti/wakamiti-github-actions/.github/workflows/validate.yml@main
 with:
   repo: ${{ github.event.repository.name }}
 secrets: inherit
@@ -22,7 +22,7 @@ Maneja el despliegue de versiones snapshot de proyectos Wakamiti al repositorio 
 
 _Ejemplo:_
 ```yaml
-uses: wakamiti/wakamiti-github-actions/actions/snapshot.yml@main
+uses: wakamiti/wakamiti-github-actions/.github/workflows/snapshot.yml@main
 secrets: inherit
 ```
 
@@ -39,7 +39,7 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    uses: wakamiti/wakamiti-github-actions/actions/validate.yml@main
+    uses: wakamiti/wakamiti-github-actions/.github/workflows/validate.yml@main
     with:
       repo: ${{ github.event.repository.name }}
     secrets: inherit
