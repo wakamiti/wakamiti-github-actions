@@ -43,7 +43,8 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
 
-      - uses: smartsquaregmbh/delete-old-packages@v0.8.1
+      - name: Remove old packages
+        uses: smartsquaregmbh/delete-old-packages@v0.8.1
         with:
           organization: wakamiti
           type: maven
@@ -56,9 +57,3 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         working-directory: ${{ inputs.working-directory }}
         run: mvn deploy -DskipTests
-
-#      - uses: actions/delete-package-versions@v5
-#        with:
-#          package-name: ${{ env.PACKAGE }}
-#          package-type: 'maven'
-#          min-versions-to-keep: 1
