@@ -50,6 +50,13 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
         run: mvn deploy -DskipTests
 
+      - uses: smartsquaregmbh/delete-old-packages@v0.8.1
+        with:
+          organization: wakamiti
+          type: maven
+          keep: 1
+          names: ${{ env.PACKAGE }}
+
       - uses: actions/delete-package-versions@v5
         with:
           package-name: ${{ env.PACKAGE }}
