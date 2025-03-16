@@ -21,7 +21,13 @@ jobs:
           java-version: '17'
           distribution: 'adopt'
           cache: 'maven'
-          settings-path: ${{ github.workspace }}/.github/settings
+
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
 
       - name: Check Snapshot
         env:
@@ -39,13 +45,6 @@ jobs:
           groupId=$(mvn -q help:evaluate -Dexpression=project.groupId -DforceStdout)
           artifactId=$(mvn -q help:evaluate -Dexpression=project.artifactId -DforceStdout)
           echo "PACKAGE=${groupId}.${artifactId}" >> $GITHUB_ENV
-
-      - name: Cache Maven packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
 
       - name: Remove old packages
         uses: smartsquaregmbh/delete-old-packages@v0.8.1
