@@ -20,12 +20,57 @@ jobs:
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
 
+      - name: Create Maven settings.xml
+        run: |
+            mkdir -p ${{ github.workspace }}/.mvn
+            cat >${{ github.workspace }}/.mvn/settings.xml <<EOL
+            <settings>
+              <servers>
+                <server>
+                  <id>github</id>
+                  <username>${env.GITHUB_ACTOR}</username>
+                  <password>${env.GITHUB_TOKEN}</password>
+                </server>
+              </servers>
+              <profiles>
+                <profile>
+                  <id>wakamiti</id>
+                  <repositories>
+                    <repository>
+                      <id>central</id>
+                      <url>https://repo1.maven.org/maven2</url>
+                    </repository>
+                    <repository>
+                      <id>github</id>
+                      <url>https://maven.pkg.github.com/wakamiti/*</url>
+                      <snapshots><enabled>true</enabled></snapshots>
+                    </repository>
+                  </repositories>
+                  <pluginRepositories>
+                    <pluginRepository>
+                      <id>central</id>
+                      <url>https://repo1.maven.org/maven2</url>
+                    </pluginRepository>
+                    <pluginRepository>
+                      <id>github</id>
+                      <url>https://maven.pkg.github.com/wakamiti/*</url>
+                      <snapshots><enabled>true</enabled></snapshots>
+                    </pluginRepository>
+                  </pluginRepositories>
+                </profile>
+              </profiles>
+              <activeProfiles>
+                <activeProfile>wakamiti</activeProfile>
+              </activeProfiles>
+            </settings>
+            EOL
+
       - uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'adopt'
           cache: 'maven'
-          settings-path: ${{ github.workspace }}/.github/settings
+          settings-path: ${{ github.workspace }}/.mvn/settings
 
       - name: Cache SonarCloud packages
         uses: actions/cache@v4
