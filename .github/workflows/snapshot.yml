@@ -61,4 +61,4 @@ jobs:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         working-directory: ${{ inputs.working-directory }}
-        run: mvn deploy -DskipTests -s ${{ github.workspace }}/.mvn/settings.xml
+        run: mvn deploy -DskipTests
