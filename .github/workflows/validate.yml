@@ -26,8 +26,8 @@ jobs:
 
       - name: Create Maven settings.xml
         run: |
-            mkdir -p ${{ github.workspace }}/.mvn
-            cat >${{ github.workspace }}/.mvn/settings.xml <<EOL
+            mkdir -p $HOME/.m2
+            cat >$HOME/.m2/settings.xml <<EOL
             <settings>
               <servers>
                 <server>
@@ -74,7 +74,7 @@ jobs:
           java-version: '17'
           distribution: 'adopt'
           cache: 'maven'
-          settings-path: ${{ github.workspace }}/.mvn/settings.xml
+#          settings-path: ${{ github.workspace }}/.mvn/settings.xml
 
       - name: Cache SonarCloud packages
         uses: actions/cache@v4
@@ -98,7 +98,7 @@ jobs:
         run: mvn clean install
 
       - name: Analyze
-        if: ${{ hashFiles('**/src/**') != '' }}
+        if: ${{ inputs.analyze && hashFiles('**/src/**') != '' }}
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
