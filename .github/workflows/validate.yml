@@ -41,6 +41,8 @@ jobs:
           restore-keys: ${{ runner.os }}-m2
 
       - name: Build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
         working-directory: ${{ inputs.working-directory }}
         run: mvn clean install
 
