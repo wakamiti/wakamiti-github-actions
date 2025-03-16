@@ -21,8 +21,12 @@ jobs:
           java-version: '17'
           distribution: 'adopt'
           cache: 'maven'
+          settings-path: ${{ github.workspace }}/.github/settings
 
       - name: Check Snapshot
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         working-directory: ${{ inputs.working-directory }}
         run: |
           version=$(mvn -q help:evaluate -Dexpression=project.version -DforceStdout)
@@ -55,6 +59,7 @@ jobs:
       - name: Build and Deploy
         if: env.DEPLOY == 'true'
         env:
+          GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         working-directory: ${{ inputs.working-directory }}
         run: mvn deploy -DskipTests
