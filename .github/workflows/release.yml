@@ -42,7 +42,7 @@ jobs:
             echo error: Current version $snapshot is not a snapshot.
             exit 1
           fi
-          if [[ ! $snapshot == ${{ inputs.version }}-SNAPSHOT$ ]]; then
+          if [[ ! $snapshot == ${{ inputs.version }}-SNAPSHOT ]]; then
             echo error: Current version $snapshot is not the snapshot of version ${{ inputs.version }}.
             exit 1
           fi
