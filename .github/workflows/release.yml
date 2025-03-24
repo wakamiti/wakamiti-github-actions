@@ -61,10 +61,8 @@ jobs:
           else 
             mvn versions:set -DnewVersion=${{ env.VERSION }} -DgenerateBackupPoms=false
           fi
-          body=$(sed -n '/^## \[unreleased\]/,/^## \[/p' ${{ env.CHANGELOG }} \ 
-            | sed '/^## \[/d' | sed ':a;N;$!ba;s/\n/\\n/g')
-          cat ${{ env.CHANGELOG }} \
-            | sed "s/\[unreleased\]/[${{ env.VERSION }}] - $(date +%F)/" > ${{ env.CHANGELOG }}
+          body=$(sed -n '/^## \[unreleased\]/,/^## \[/p' ${{ env.CHANGELOG }} | sed '/^## \[/d' | sed ':a;N;$!ba;s/\n/\\n/g')
+          cat ${{ env.CHANGELOG }} | sed "s/\[unreleased\]/[${{ env.VERSION }}] - $(date +%F)/" > ${{ env.CHANGELOG }}
           echo "PR_BODY=$body" >> $GITHUB_ENV
 
       - name: Commit and push
