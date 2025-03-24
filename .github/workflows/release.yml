@@ -3,13 +3,6 @@ name: Create Release Branch
 on:
   workflow_call:
     inputs:
-      version:
-        required: true
-        type: string
-      reviewers:
-        required: false
-        type: string
-        default: mgalbis
       working-directory:
         required: false
         type: string
@@ -22,10 +15,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Create release branch
+      - name: Prepare branch
         working-directory: ${{ inputs.working-directory }}
         run: |
-          git checkout -b release/v${{ inputs.version }} develop
+          git checkout develop
           echo "CHANGELOG=$(ls | grep -i "changelog.md")" >> $GITHUB_ENV
 
       - name: Check version
@@ -44,19 +37,19 @@ jobs:
             echo error: Current version $snapshot is not a snapshot.
             exit 1
           fi
-          if [[ ! $snapshot == ${{ inputs.version }}-SNAPSHOT ]]; then
-            echo error: Current version $snapshot is not the snapshot of version ${{ inputs.version }}.
+          version=$(echo "$snapshot" | sed 's/-SNAPSHOT//')
+          if grep -iq "\[$version\]" ${{ env.CHANGELOG }}; then
+            echo error: Current version $version already exists in ${{ env.CHANGELOG }}.
             exit 1
           fi
-          if grep -iq "\[${{ inputs.version }}\]" ${{ env.CHANGELOG }}; then
-            echo error: Current version ${{ inputs.version }} already exists in ${{ env.CHANGELOG }}.
-            exit 1
-          fi
+          echo "VERSION=$version" >> $GITHUB_ENV
 
       - name: Initialize mandatory git config
+        working-directory: ${{ inputs.working-directory }}
         run: |
           git config user.name "GitHub Actions"
           git config user.email noreply@github.com
+          git checkout -b release/v${{ env.VERSION }} develop
 
       - name: Change version
         id: change-version
@@ -64,28 +57,29 @@ jobs:
         run: |
           snapshot=$(mvn -q help:evaluate -Dexpression=project.version -DforceStdout)
           if [[ $snapshot == $(mvn -q help:evaluate -Dexpression=revision -DforceStdout) ]]; then
-            mvn versions:set-property -Dproperty=revision -DnewVersion=${{ inputs.version }} -DgenerateBackupPoms=false
+            mvn versions:set-property -Dproperty=revision -DnewVersion=${{ env.VERSION }} -DgenerateBackupPoms=false
           else 
-            mvn versions:set -DnewVersion=${{ inputs.version }} -DgenerateBackupPoms=false
+            mvn versions:set -DnewVersion=${{ env.VERSION }} -DgenerateBackupPoms=false
           fi
           body=$(sed -n '/^## \[unreleased\]/,/^## \[/p' ${{ env.CHANGELOG }} | sed '/^## \[/d' | sed ':a;N;$!ba;s/\n/\\n/g')
-          cat ${{ env.CHANGELOG }} | sed "s/\[unreleased\]/[${{ inputs.version }}] - $(date +%F)/" > ${{ env.CHANGELOG }}
+          cat ${{ env.CHANGELOG }} | sed "s/\[unreleased\]/[${{ env.VERSION }}] - $(date +%F)/" > ${{ env.CHANGELOG }}
           echo "PR_BODY=$body" >> $GITHUB_ENV
 
       - name: Commit and push
         working-directory: ${{ inputs.working-directory }}
         run: |
           git add .
-          git commit --message "Prepare release ${{ inputs.version }}"
-          git push origin release/v${{ inputs.version }}
+          git commit --message "Prepare release ${{ env.VERSION }}"
+          git push origin release/v${{ env.VERSION }}
 
       - name: create pull request
         run: | 
           echo -e "${{ env.PR_BODY }}" | gh pr create \
             -B main \
-            -H release/v${{ inputs.version }} \
-            -r ${{ inputs.reviewers }} \
-            --title 'Release version v${{ inputs.version }}' \
+            -H release/v${{ env.VERSION }} \
+            -r ${{ vars.REVIEWERS }} \
+            --title 'Release version v${{ env.VERSION }}' \
             --body-file -
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
