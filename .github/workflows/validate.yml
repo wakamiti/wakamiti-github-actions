@@ -95,7 +95,7 @@ jobs:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         working-directory: ${{ inputs.working-directory }}
-        run: mvn clean install -U
+        run: mvn -B clean install
 
       - name: Analyze
         if: ${{ inputs.analyze && hashFiles('**/src/**') != '' }}
