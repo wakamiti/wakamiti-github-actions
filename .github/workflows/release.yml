@@ -71,7 +71,7 @@ jobs:
           body=$(sed -n '/^## \[unreleased\]/,/^## \[/p' ${{ env.CHANGELOG }} | sed '/^## \[/d')
           cat ${{ env.CHANGELOG }} | sed "s/\[unreleased\]/[${{ inputs.version }}] - $(date +%F)/" > ${{ env.CHANGELOG }}
           echo "PR_BODY<<EOF" >> $GITHUB_ENV
-          echo $body >> $GITHUB_ENV
+          echo "$body" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
       - name: Commit and push
