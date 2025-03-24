@@ -58,6 +58,7 @@ jobs:
 
       - name: Change version
         id: change-version
+        working-directory: ${{ inputs.working-directory }}
         run: |
           snapshot=$(mvn -q help:evaluate -Dexpression=project.version -DforceStdout)
           if [[ $snapshot == $(mvn -q help:evaluate -Dexpression=revision -DforceStdout) ]]; then
@@ -70,6 +71,7 @@ jobs:
           echo "::set-output name=body::$body"
 
       - name: Commit and push
+        working-directory: ${{ inputs.working-directory }}
         run: |
           git add pom.xml
           git add CHANGELOG.md
@@ -77,6 +79,7 @@ jobs:
           git push origin release/v${{ inputs.version }}
 
 #      - name: Create pull request into main
+#        working-directory: ${{ inputs.working-directory }}
 #        uses: thomaseizinger/create-pull-request@1.0.0
 #        with:
 #          github-token: ${{ secrets.GITHUB_TOKEN }}
