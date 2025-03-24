@@ -68,11 +68,9 @@ jobs:
           else 
             mvn versions:set -DnewVersion=${{ inputs.version }} -DgenerateBackupPoms=false
           fi
-          body=$(sed -n '/^## \[unreleased\]/,/^## \[/p' ${{ env.CHANGELOG }} | sed '/^## \[/d')
+          body=$(sed -n '/^## \[unreleased\]/,/^## \[/p' ${{ env.CHANGELOG }} | sed '/^## \[/d' \ sed ':a;N;$!ba;s/\n/\\n/g')
           cat ${{ env.CHANGELOG }} | sed "s/\[unreleased\]/[${{ inputs.version }}] - $(date +%F)/" > ${{ env.CHANGELOG }}
-          echo "PR_BODY<<EOF" >> $GITHUB_ENV
-          echo "$body" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+          echo "PR_BODY=$body" >> $GITHUB_ENV
 
       - name: Commit and push
         working-directory: ${{ inputs.working-directory }}
@@ -83,11 +81,11 @@ jobs:
 
       - name: create pull request
         run: | 
-          echo -e "${{ env.PR_BODY }}" | gh pr create \
+          gh pr create \
             -B main \
             -H release/v${{ inputs.version }} \
             -r ${{ inputs.reviewers }}
             --title 'Release version v${{ inputs.version }}' \
-            --body-file -
+            --body "${{ env.PR_BODY }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
