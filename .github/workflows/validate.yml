@@ -29,7 +29,6 @@ jobs:
           java-version: '17'
           distribution: 'adopt'
           cache: 'maven'
-      #          settings-path: ${{ github.workspace }}/.mvn/settings.xml
 
       - name: Create Maven settings.xml
         run: |
