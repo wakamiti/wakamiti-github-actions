@@ -24,17 +24,19 @@ jobs:
 
       - name: Create release branch
         working-directory: ${{ inputs.working-directory }}
-        run: git checkout -b release/v${{ inputs.version }} develop
+        run: |
+          git checkout -b release/v${{ inputs.version }} develop
+          echo "CHANGELOG=$(ls | grep -i "changelog.md")" >> $GITHUB_ENV
 
       - name: Check version
         working-directory: ${{ inputs.working-directory }}
         run: |
-          if [ ! -f "CHANGELOG.md" ]; then
-            echo error: CHANGELOG.md file does not exists.
+          if [ ! -f "${{ env.CHANGELOG }}" ]; then
+            echo error: ${{ env.CHANGELOG }} file does not exists.
             exit 1
           fi
-          if ! grep -iq "\[unreleased\]" CHANGELOG.md; then 
-            echo error: CHANGELOG.md must contains an [unreleased] block.
+          if ! grep -iq "\[unreleased\]" ${{ env.CHANGELOG }}; then 
+            echo error: ${{ env.CHANGELOG }} must contains an [unreleased] block.
             exit 1
           fi
           snapshot=$(mvn -q help:evaluate -Dexpression=project.version -DforceStdout)
@@ -46,8 +48,8 @@ jobs:
             echo error: Current version $snapshot is not the snapshot of version ${{ inputs.version }}.
             exit 1
           fi
-          if grep -iq "\[${{ inputs.version }}\]" CHANGELOG.md; then
-            echo error: Current version ${{ inputs.version }} already exists in CHANGELOG.md.
+          if grep -iq "\[${{ inputs.version }}\]" ${{ env.CHANGELOG }}; then
+            echo error: Current version ${{ inputs.version }} already exists in ${{ env.CHANGELOG }}.
             exit 1
           fi
 
@@ -66,15 +68,14 @@ jobs:
           else 
             mvn versions:set -DnewVersion=${{ inputs.version }} -DgenerateBackupPoms=false
           fi
-          body=$(sed -n '/^## \[unreleased\]/,/^## \[/p' changelog.md | sed '/^## \[/d')
-          cat changelog.md | sed "s/\[unreleased\]/[${{ inputs.version }}] - $(date +%F)/" > changelog.md
+          body=$(sed -n '/^## \[unreleased\]/,/^## \[/p' ${{ env.CHANGELOG }} | sed '/^## \[/d')
+          cat ${{ env.CHANGELOG }} | sed "s/\[unreleased\]/[${{ inputs.version }}] - $(date +%F)/" > ${{ env.CHANGELOG }}
           echo "::set-output name=body::$body"
 
       - name: Commit and push
         working-directory: ${{ inputs.working-directory }}
         run: |
-          git add pom.xml
-          git add CHANGELOG.md
+          git add .
           git commit --message "Prepare release ${{ inputs.version }}"
           git push origin release/v${{ inputs.version }}
 
