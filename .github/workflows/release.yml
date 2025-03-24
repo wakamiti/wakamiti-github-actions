@@ -84,7 +84,7 @@ jobs:
           gh pr create \
             -B main \
             -H release/v${{ inputs.version }} \
-            -r ${{ inputs.reviewers }}
+            -r ${{ inputs.reviewers }} \
             --title 'Release version v${{ inputs.version }}' \
             --body "${{ env.PR_BODY }}"
         env:
