@@ -1,0 +1,17 @@
+name: Release Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        required: true
+        type: string
+        description: The release version
+
+jobs:
+  release:
+    uses: ./.github/workflows/release.yml
+    with:
+      version: ${{ inputs.version }}
+      working-directory: 'test'
+    secrets: inherit
