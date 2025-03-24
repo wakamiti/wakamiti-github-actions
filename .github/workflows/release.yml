@@ -88,6 +88,6 @@ jobs:
             -H release/v${{ inputs.version }} \
             -r ${{ inputs.reviewers }}
             --title 'Release version v${{ inputs.version }}' \
-            --body '${{ env.PR_BODY }}'
+            --body "${{ env.PR_BODY }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
