@@ -81,11 +81,11 @@ jobs:
 
       - name: create pull request
         run: | 
-          gh pr create \
+          echo -e "${{ env.PR_BODY }}" | gh pr create \
             -B main \
             -H release/v${{ inputs.version }} \
             -r ${{ inputs.reviewers }} \
             --title 'Release version v${{ inputs.version }}' \
-            --body "${{ env.PR_BODY }}"
+            --body-file -
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
