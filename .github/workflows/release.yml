@@ -70,7 +70,7 @@ jobs:
           fi
           body=$(sed -n '/^## \[unreleased\]/,/^## \[/p' ${{ env.CHANGELOG }} | sed '/^## \[/d')
           cat ${{ env.CHANGELOG }} | sed "s/\[unreleased\]/[${{ inputs.version }}] - $(date +%F)/" > ${{ env.CHANGELOG }}
-          echo "::set-output name=body::$body"
+          echo "PR_BODY=$body" >> $GITHUB_ENV
 
       - name: Commit and push
         working-directory: ${{ inputs.working-directory }}
@@ -79,14 +79,13 @@ jobs:
           git commit --message "Prepare release ${{ inputs.version }}"
           git push origin release/v${{ inputs.version }}
 
-      - name: Create pull request into main
-        uses: thomaseizinger/create-pull-request@1.0.0
+      - name: create pull request
+        run: | 
+          gh pr create \
+            -B main \
+            -H release/v${{ inputs.version }} \
+            -r ${{ inputs.reviewers }}
+            --title 'Release version v${{ inputs.version }}' \
+            --body '${{ env.PR_BODY }}'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          head: release/v${{ inputs.version }}
-          base: main
-          title: Release version v${{ inputs.version }}
-          reviewers: ${{ inputs.reviewers }}
-          body: |
-            ${{ steps.change-version.outputs.body }}
