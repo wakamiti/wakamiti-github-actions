@@ -85,11 +85,13 @@ jobs:
           GH_TOKEN:  ${{ secrets.GITHUB_TOKEN }}
           HEADERS: '-H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28"'
         run: |
-          ENDPOINT="/orgs/$ORG/teams/$TEAM/members?role=all"
+          ENDPOINT="/orgs/$ORG/teams/$TEAM/members"
           echo ENDPOINT=$ENDPOINT
-          data=$(gh api $HEADERS $ENDPOINT | jq -r 'map(.login) | join(",")')
-          echo data=$data
-          echo data=$data >> "$GITHUB_OUTPUT"
+          response=$(gh api $HEADERS $ENDPOINT)
+          echo response=$response
+          response=$(echo $response | jq -r 'map(.login) | join(",")')
+          echo response=$response
+          echo data=$response >> "$GITHUB_OUTPUT"
 
 
       - name: create pull request
