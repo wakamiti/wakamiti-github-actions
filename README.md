@@ -26,6 +26,14 @@ uses: wakamiti/wakamiti-github-actions/.github/workflows/snapshot.yml@main
 secrets: inherit
 ```
 
+### 3. Release
+Automatiza la creación de versiones, incluyendo el etiquetado de versiones y la generación de changelogs.
+
+_Ejemplo:_
+```yaml
+uses: wakamiti/wakamiti-github-actions/.github/workflows/release.yml@main
+secrets: inherit
+```
 
 ## Primeros pasos
 Añade la acción deseada al fichero de flujo de trabajo de GitHub:
