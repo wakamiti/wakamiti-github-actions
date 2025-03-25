@@ -66,19 +66,30 @@ jobs:
 
       - name: Commit and push
         working-directory: ${{ inputs.working-directory }}
+        env:
+          VERSION: ${{ env.VERSION }}
         run: |
           git add .
-          git commit --message "Prepare release ${{ env.VERSION }}"
-          git push origin release/v${{ env.VERSION }}
+          git commit --message "Prepare release $VERSION"
+          git push origin release/v$VERSION
+
+      - name: Get reviewers
+        id: get-reviewers
+        env:
+          ORG: ${{ github.repository_owner }}
+          TEAM: 'reviewers'
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          data=$(gh api --paginate -X GET /orgs/$ORG/teams/$TEAM/members)
+          echo data=$(echo "$data" | jq -r 'map(.login) | join(",")') >> "$GITHUB_OUTPUT"
 
       - name: create pull request
-        run: | 
-          echo -e "${{ env.PR_BODY }}" | gh pr create \
-            -B main \
-            -H release/v${{ env.VERSION }} \
-            -r ${{ vars.REVIEWERS }} \
-            --title 'Release version v${{ env.VERSION }}' \
-            --body-file -
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+          BODY: ${{ env.PR_BODY }}
+          VERSION: ${{ env.VERSION }}
+          REVIEWERS: ${{ steps.get-reviewers.outputs.data }}
+        run: | 
+          echo -e "$BODY" | gh pr create -B main -H release/v$VERSION -r reviewers \
+            --title 'Release version v$VERSION' \
+            --body-file -
