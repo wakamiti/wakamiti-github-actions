@@ -4,6 +4,7 @@ Un repositorio centralizado de GitHub Actions reutilizables diseñadas para agil
 para proyectos impulsados por Wakamiti. Este repositorio proporciona acciones modulares para tareas comunes, 
 asegurando consistencia y eficiencia a través de los repositorios.
 
+
 ## Acciones Disponibles
 
 ### 1. Validate
@@ -33,22 +34,4 @@ _Ejemplo:_
 ```yaml
 uses: wakamiti/wakamiti-github-actions/.github/workflows/release.yml@main
 secrets: inherit
-```
-
-## Primeros pasos
-Añade la acción deseada al fichero de flujo de trabajo de GitHub:
-
-```yaml
-name: Example Workflow
-on:
-  push:
-    branches:
-      - main
-jobs:
-  validate:
-    runs-on: ubuntu-latest
-    uses: wakamiti/wakamiti-github-actions/.github/workflows/validate.yml@main
-    with:
-      repo: ${{ github.event.repository.name }}
-    secrets: inherit
 ```
