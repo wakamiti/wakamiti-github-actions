@@ -1,5 +1,4 @@
 name: Create Release Branch
-
 on:
   workflow_call:
     inputs:
