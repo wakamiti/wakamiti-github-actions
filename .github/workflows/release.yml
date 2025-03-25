@@ -76,16 +76,16 @@ jobs:
           git commit --message "Prepare release ${{ env.VERSION }}"
           git push origin release/v${{ env.VERSION }}
 
-      - name: Get reviewers
-        id: get-reviewers
-        shell: bash
-        env:
-          ORG: ${{ github.repository_owner }}
-          TEAM: 'reviewers'
-          GH_TOKEN:  ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          data=$(gh api --paginate -X GET /orgs/${{ github.repository_owner }}/teams/reviewers/members)
-          echo data=$(echo "$data" | jq -r 'map(.login) | join(",")') >> "$GITHUB_OUTPUT"
+#      - name: Get reviewers
+#        id: get-reviewers
+#        shell: bash
+#        env:
+#          ORG: ${{ github.repository_owner }}
+#          TEAM: 'reviewers'
+#          GH_TOKEN:  ${{ secrets.GITHUB_TOKEN }}
+#        run: |
+#          data=$(gh api --paginate -X GET /orgs/${{ github.repository_owner }}/teams/reviewers/members)
+#          echo data=$(echo "$data" | jq -r 'map(.login) | join(",")') >> "$GITHUB_OUTPUT"
 
       - name: create pull request
         shell: bash
