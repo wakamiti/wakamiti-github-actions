@@ -71,15 +71,14 @@ jobs:
 
       - name: Commit and push
         working-directory: ${{ inputs.working-directory }}
-        env:
-          VERSION: ${{ env.VERSION }}
         run: |
           git add .
-          git commit --message "Prepare release $VERSION"
-          git push origin release/v$VERSION
+          git commit --message "Prepare release ${{ env.VERSION }}"
+          git push origin release/v${{ env.VERSION }}
 
       - name: Get reviewers
         id: get-reviewers
+        shell: bash
         env:
           ORG: ${{ github.repository_owner }}
           TEAM: 'reviewers'
@@ -88,6 +87,7 @@ jobs:
           echo data=$(gh api --paginate -X GET /orgs/$ORG/teams/$TEAM/members | jq -r 'map(.login) | join(",")') >> "$GITHUB_OUTPUT"
 
       - name: create pull request
+        shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BODY: ${{ env.PR_BODY }}
