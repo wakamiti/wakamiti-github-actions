@@ -12,33 +12,38 @@ jobs:
     name: Create release branch
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Prepare branch
         working-directory: ${{ inputs.working-directory }}
         run: |
           git checkout develop
-          echo "CHANGELOG=$(ls | grep -i "changelog.md")" >> $GITHUB_ENV
+          CHANGELOG=$(ls | grep -i "changelog.md")
+          if [ -z "$CHANGELOG" ]; then
+            echo "::error::CHANGELOG.md file does not exist."
+            exit 1
+          fi
+          echo "CHANGELOG=$CHANGELOG" >> $GITHUB_ENV
 
       - name: Check version
         working-directory: ${{ inputs.working-directory }}
         run: |
           if [ ! -f "${{ env.CHANGELOG }}" ]; then
-            echo error: ${{ env.CHANGELOG }} file does not exists.
+            echo "::error::${{ env.CHANGELOG }} file does not exists."
             exit 1
           fi
           if ! grep -iq "\[unreleased\]" ${{ env.CHANGELOG }}; then 
-            echo error: ${{ env.CHANGELOG }} must contains an [unreleased] block.
+            echo "::error::${{ env.CHANGELOG }} must contains an [unreleased] block."
             exit 1
           fi
           snapshot=$(mvn -q help:evaluate -Dexpression=project.version -DforceStdout)
           if [[ ! $snapshot =~ -SNAPSHOT$ ]]; then
-            echo error: Current version $snapshot is not a snapshot.
+            echo "::error::Current version $snapshot is not a snapshot."
             exit 1
           fi
           version=$(echo "$snapshot" | sed 's/-SNAPSHOT//')
           if grep -iq "\[$version\]" ${{ env.CHANGELOG }}; then
-            echo error: Current version $version already exists in ${{ env.CHANGELOG }}.
+            echo "::error::Current version $version already exists in ${{ env.CHANGELOG }}."
             exit 1
           fi
           echo "VERSION=$version" >> $GITHUB_ENV
@@ -80,8 +85,7 @@ jobs:
           TEAM: 'reviewers'
           GH_TOKEN: ${{ github.token }}
         run: |
-          data=$(gh api --paginate -X GET /orgs/$ORG/teams/$TEAM/members)
-          echo data=$(echo "$data" | jq -r 'map(.login) | join(",")') >> "$GITHUB_OUTPUT"
+          echo data=$(gh api --paginate -X GET /orgs/$ORG/teams/$TEAM/members | jq -r 'map(.login) | join(",")') >> "$GITHUB_OUTPUT"
 
       - name: create pull request
         env:
