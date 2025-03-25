@@ -85,8 +85,12 @@ jobs:
           GH_TOKEN:  ${{ secrets.GITHUB_TOKEN }}
           HEADERS: '-H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28"'
         run: |
-          ENDPOINT="/orgs/$ORG/teams/$TEAM/members"
-          echo data=$(gh api $HEADERS $ENDPOINT | jq -r 'map(.login) | join(",")') >> "$GITHUB_OUTPUT"
+          ENDPOINT="/orgs/$ORG/teams/$TEAM/members?role=all"
+          echo ENDPOINT=$ENDPOINT
+          data=$(gh api $HEADERS $ENDPOINT | jq -r 'map(.login) | join(",")')
+          echo data=$data
+          echo data=$data >> "$GITHUB_OUTPUT"
+
 
       - name: create pull request
         shell: bash
@@ -94,6 +98,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REVIEWERS: ${{ steps.get-reviewers.outputs.data }}
         run: | 
-          echo -e "${{ env.PR_BODY }}" | gh pr create -B main -H release/v${{ env.VERSION }} -r reviewers \
+          echo -e "${{ env.PR_BODY }}" | gh pr create -B main -H release/v${{ env.VERSION }} -r $REVIEWERS \
             --title 'Release version v${{ env.VERSION }}' \
             --body-file -
