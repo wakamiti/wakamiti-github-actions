@@ -1,0 +1,13 @@
+name: Validate Pull Request
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  validate:
+    name: Validate
+    uses: ./.github/workflows/validate.yml
+    with:
+      repo: ${{ github.event.repository.name }}
+      working-directory: test
+    secrets: inherit

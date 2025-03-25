@@ -1,12 +1,7 @@
-name: Test
+name: Publish Snapshot
 on:
-  workflow_call:
   push:
-    branches:
-      - main
-      - develop
-    paths:
-      - '.github/**'
+    branches: [develop]
 
 jobs:
   validate:
@@ -15,9 +10,10 @@ jobs:
     with:
       repo: ${{ github.event.repository.name }}
       working-directory: test
+      analyze: false
     secrets: inherit
 
-  snapshot:
+  deploy:
     name: Publish Snapshot Package
     needs: validate
     permissions:
