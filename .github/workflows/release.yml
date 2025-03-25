@@ -84,16 +84,15 @@ jobs:
           TEAM: 'reviewers'
           GH_TOKEN: ${{ github.token }}
         run: |
-          echo data=$(gh api --paginate -X GET /orgs/$ORG/teams/$TEAM/members | jq -r 'map(.login) | join(",")') >> "$GITHUB_OUTPUT"
+          data=$(gh api --paginate -X GET /orgs/${{ github.repository_owner }}/teams/reviewers/members)
+          echo data=$(echo "$data" | jq -r 'map(.login) | join(",")') >> "$GITHUB_OUTPUT"
 
       - name: create pull request
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BODY: ${{ env.PR_BODY }}
-          VERSION: ${{ env.VERSION }}
           REVIEWERS: ${{ steps.get-reviewers.outputs.data }}
         run: | 
-          echo -e "$BODY" | gh pr create -B main -H release/v$VERSION -r reviewers \
-            --title 'Release version v$VERSION' \
+          echo -e "${{ env.PR_BODY }}" | gh pr create -B main -H release/v${{ env.VERSION }} -r reviewers \
+            --title 'Release version v${{ env.VERSION }}' \
             --body-file -
