@@ -82,7 +82,7 @@ jobs:
         env:
           ORG: ${{ github.repository_owner }}
           TEAM: 'reviewers'
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN:  ${{ secrets.GITHUB_TOKEN }}
         run: |
           data=$(gh api --paginate -X GET /orgs/${{ github.repository_owner }}/teams/reviewers/members)
           echo data=$(echo "$data" | jq -r 'map(.login) | join(",")') >> "$GITHUB_OUTPUT"
