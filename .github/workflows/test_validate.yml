@@ -1,4 +1,4 @@
-name: Validate Pull Request
+name: Pull Request Test
 on:
   pull_request:
     types: [opened, synchronize, reopened]

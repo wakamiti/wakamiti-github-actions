@@ -83,14 +83,7 @@ jobs:
           ORG: ${{ github.repository_owner }}
           TEAM: 'reviewers'
           GH_TOKEN:  ${{ secrets.API_TOKEN }}
-          HEADERS: '-H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28"'
-        run: |
-          response=$(gh api orgs/$ORG/teams/$TEAM/members)
-          echo response=$response
-          response=$(echo $response | jq -r 'map(.login) | join(",")')
-          echo response=$response
-          echo data=$response >> "$GITHUB_OUTPUT"
-
+        run: echo data=$(gh api orgs/$ORG/teams/$TEAM/members | jq -r 'map(.login) | join(",")') >> "$GITHUB_OUTPUT"
 
       - name: create pull request
         shell: bash
