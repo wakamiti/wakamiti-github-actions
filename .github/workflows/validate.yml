@@ -2,9 +2,6 @@ name: Validate Code
 on:
   workflow_call:
     inputs:
-      repo:
-        required: true
-        type: string
       working-directory:
         required: false
         type: string
