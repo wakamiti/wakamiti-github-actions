@@ -13,7 +13,7 @@
     <!-- coordinates -->
     <groupId>es.wakamiti</groupId>
     <artifactId>wakamiti-github-actions</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.0.2-SNAPSHOT</version>
     <name>Test Github Actions</name>
     <description>Dummy project to test wakamiti GitHub Actions</description>
     <url>https://github.com/wakamiti/wakamiti-github-actions</url>
