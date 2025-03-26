@@ -1,4 +1,4 @@
-name: Publish Snapshot
+name: Snapshot Test
 on:
   push:
     branches: [develop]
