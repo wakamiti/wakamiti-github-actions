@@ -8,6 +8,5 @@ jobs:
     name: Validate
     uses: ./.github/workflows/validate.yml
     with:
-      repo: ${{ github.event.repository.name }}
       working-directory: test
     secrets: inherit
