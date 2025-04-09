@@ -13,7 +13,7 @@
     <!-- coordinates -->
     <groupId>es.wakamiti</groupId>
     <artifactId>wakamiti-github-actions</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.1-SNAPSHOT</version>
     <name>Test Github Actions</name>
     <description>Dummy project to test wakamiti GitHub Actions</description>
     <url>https://github.com/wakamiti/wakamiti-github-actions</url>
@@ -35,12 +35,13 @@
         <repository>
             <id>ossrh</id>
             <name>Central Repository OSSRH</name>
-            <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+            <url>http://sonatype:8081/repository/maven-internal</url>
         </repository>
         <snapshotRepository>
-            <id>github</id>
+            <id>wakamiti-github</id>
             <name>GitHub Packages</name>
-            <url>https://maven.pkg.github.com/wakamiti/wakamiti-github-actions</url>
+            <url>http://sonatype:8081/repository/maven-snapshots</url>
+            <uniqueVersion>true</uniqueVersion>
         </snapshotRepository>
     </distributionManagement>
 
