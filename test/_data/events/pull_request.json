@@ -1,0 +1,10 @@
+{
+  "repository": {
+    "name": "wakamiti-github-actions"
+  },
+  "pull_request": {
+    "head": {
+      "ref": "refs/heads/feat/something"
+    }
+  }
+}
