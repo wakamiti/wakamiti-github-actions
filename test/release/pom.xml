@@ -33,12 +33,12 @@
 
     <distributionManagement>
         <repository>
-            <id>ossrh</id>
+            <id>maven-central</id>
             <name>Central Repository OSSRH</name>
             <url>http://sonatype:8081/repository/maven-internal</url>
         </repository>
         <snapshotRepository>
-            <id>wakamiti-github</id>
+            <id>github</id>
             <name>GitHub Packages</name>
             <url>http://sonatype:8081/repository/maven-snapshots</url>
             <uniqueVersion>true</uniqueVersion>
