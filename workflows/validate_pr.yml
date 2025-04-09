@@ -12,4 +12,5 @@ jobs:
   validate:
     name: Validate Code
     uses: wakamiti/wakamiti-github-actions/.github/workflows/validate.yml@main
+    needs: config
     secrets: inherit
