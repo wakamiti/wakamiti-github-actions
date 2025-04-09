@@ -11,28 +11,36 @@ jobs:
   build:
     name: Deploy
     runs-on: ubuntu-latest
+    env:
+      GITHUB_ACTOR: ${{ github.actor }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
 
-      - uses: actions/setup-java@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v4
         with:
+          distribution: 'temurin'
           java-version: '17'
-          distribution: 'adopt'
-          cache: 'maven'
+          cache: maven
+          overwrite-settings: 'false'
+
+      - name: Cache Maven settings
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/settings.xml
+          key: settings-xml-${{ hashFiles('setup/maven-config.json') }}
 
       - name: Cache Maven packages
         uses: actions/cache@v4
         with:
-          path: ~/.m2
+          path: ~/.m2/repository
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
 
       - name: Check Snapshot
-        env:
-          GITHUB_ACTOR: ${{ github.actor }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         working-directory: ${{ inputs.working-directory }}
         run: |
           version=$(mvn -q help:evaluate -Dexpression=project.version -DforceStdout)
@@ -56,8 +64,5 @@ jobs:
 
       - name: Build and Deploy
         if: env.PACKAGE != ''
-        env:
-          GITHUB_ACTOR: ${{ github.actor }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         working-directory: ${{ inputs.working-directory }}
         run: mvn deploy -DskipTests

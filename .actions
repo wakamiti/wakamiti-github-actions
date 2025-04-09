@@ -1,0 +1,3 @@
+actions/setup-java v4
+actions/cache v4
+smartsquaregmbh/delete-old-packages v0.8.1

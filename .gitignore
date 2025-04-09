@@ -6,7 +6,6 @@
 /**/*.iml
 /**/target/
 /**/.attach_pid*
-package-lock.json
 /tmp/
 *.log
 .flattened-pom.xml

@@ -13,64 +13,24 @@ on:
 
 jobs:
   validate:
-    name: Validate Code
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    env:
+      GITHUB_ACTOR: ${{ github.actor }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+          fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
 
-      - uses: actions/setup-java@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v4
         with:
+          distribution: 'temurin'
           java-version: '17'
-          distribution: 'adopt'
-          cache: 'maven'
-
-      - name: Create Maven settings.xml
-        run: |
-            mkdir -p $HOME/.m2
-            cat >$HOME/.m2/settings.xml <<EOL
-            <settings>
-              <servers>
-                <server>
-                  <id>github</id>
-                  <username>${{ github.actor }}</username>
-                  <password>${{ secrets.GITHUB_TOKEN }}</password>
-                </server>
-              </servers>
-              <profiles>
-                <profile>
-                  <id>wakamiti</id>
-                  <repositories>
-                    <repository>
-                      <id>central</id>
-                      <url>https://repo1.maven.org/maven2</url>
-                    </repository>
-                    <repository>
-                      <id>github</id>
-                      <url>https://maven.pkg.github.com/wakamiti/*</url>
-                      <snapshots><enabled>true</enabled></snapshots>
-                    </repository>
-                  </repositories>
-                  <pluginRepositories>
-                    <pluginRepository>
-                      <id>central</id>
-                      <url>https://repo1.maven.org/maven2</url>
-                    </pluginRepository>
-                    <pluginRepository>
-                      <id>github</id>
-                      <url>https://maven.pkg.github.com/wakamiti/*</url>
-                      <snapshots><enabled>true</enabled></snapshots>
-                    </pluginRepository>
-                  </pluginRepositories>
-                </profile>
-              </profiles>
-              <activeProfiles>
-                <activeProfile>wakamiti</activeProfile>
-              </activeProfiles>
-            </settings>
-            EOL
+          cache: maven
+          overwrite-settings: 'false'
 
       - name: Cache SonarCloud packages
         uses: actions/cache@v4
@@ -79,30 +39,31 @@ jobs:
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
 
+      - name: Cache Maven settings
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/settings.xml
+          key: settings-xml-${{ hashFiles('setup/maven-config.json') }}
+
       - name: Cache Maven packages
         uses: actions/cache@v4
         with:
-          path: ~/.m2
+          path: ~/.m2/repository
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
 
-      - name: Build
-        env:
-          GITHUB_ACTOR: ${{ github.actor }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build & Test
         working-directory: ${{ inputs.working-directory }}
         run: mvn -B clean install
 
-      - name: Analyze
+      - name: SonarQube Analysis
         if: ${{ inputs.analyze && hashFiles('**/src/**') != '' }}
         env:
-          GITHUB_ACTOR: ${{ github.actor }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         working-directory: ${{ inputs.working-directory }}
         run: |
-          mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -B -ntp \
-          -Dsonar.host.url=https://sonarcloud.io \
+          mvn -B -ntp org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+          -Dsonar.host.url=$SONAR_HOST_URL \
           -Dsonar.organization=wakamiti \
-          -Dsonar.projectKey=wakamiti_${{ github.event.repository.name }} \
+          -Dsonar.projectKey=${{ github.event.repository.name }} \
           -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn

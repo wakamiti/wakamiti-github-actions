@@ -1,0 +1,3 @@
+pull_request snapshot pull_request
+push snapshot push_develop snapshot
+push release push_develop snapshot
