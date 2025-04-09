@@ -6,6 +6,9 @@ jobs:
   config:
     name: Configure
     runs-on: ubuntu-latest
+    env:
+      SONATYPE_URL: ${{ vars.SONATYPE_URL }}
+      PACKAGES_URL: ${{ vars.PACKAGES_URL }}
     steps:
       - name: Cache Maven settings
         id: maven-cache
