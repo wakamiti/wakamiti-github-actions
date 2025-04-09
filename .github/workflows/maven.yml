@@ -58,3 +58,5 @@ jobs:
               <activeProfiles><activeProfile>wakamiti</activeProfile></activeProfiles>
             </settings>
           EOL
+
+      - run: cat ~/.m2/settings.xml
