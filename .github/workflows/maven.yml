@@ -31,7 +31,7 @@ jobs:
                   <id>wakamiti</id>
                   <repositories>
                     <repository>
-                      <id>maven-central</id>
+                      <id>central</id>
                       <url>${SONATYPE_URL}/*</url>
                       <snapshots><enabled>false</enabled></snapshots>
                     </repository>
@@ -43,7 +43,7 @@ jobs:
                   </repositories>
                   <pluginRepositories>
                     <pluginRepository>
-                      <id>maven-central</id>
+                      <id>central</id>
                       <url>${SONATYPE_URL}/*</url>
                       <snapshots><enabled>false</enabled></snapshots>
                     </pluginRepository>

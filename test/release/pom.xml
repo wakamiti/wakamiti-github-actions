@@ -33,7 +33,7 @@
 
     <distributionManagement>
         <repository>
-            <id>maven-central</id>
+            <id>central</id>
             <name>Central Repository OSSRH</name>
             <url>http://sonatype:8081/repository/maven-internal</url>
         </repository>
