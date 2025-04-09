@@ -32,7 +32,7 @@ jobs:
                   <repositories>
                     <repository>
                       <id>central</id>
-                      <url>${SONATYPE_URL}/*</url>
+                      <url>${SONATYPE_URL}</url>
                       <snapshots><enabled>false</enabled></snapshots>
                     </repository>
                     <repository>
@@ -44,7 +44,7 @@ jobs:
                   <pluginRepositories>
                     <pluginRepository>
                       <id>central</id>
-                      <url>${SONATYPE_URL}/*</url>
+                      <url>${SONATYPE_URL}</url>
                       <snapshots><enabled>false</enabled></snapshots>
                     </pluginRepository>
                     <pluginRepository>
