@@ -1,11 +1,9 @@
 
 --platform ubuntu-latest=catthehacker/ubuntu:java-tools-latest
 
---env SONAR_HOST_URL=http://localhost:9000
---env PACKAGES_URL=http://sonatype:8081/repository/maven-snapshots
---env SONATYPE_URL=http://sonatype:8081/repository/maven-internal
---env SONAR_SCM_DISABLED=true
---env SONAR_CI=false
+--var SONAR_HOST_URL=http://localhost:9000
+--var PACKAGES_URL=http://sonatype:8081/repository/maven-snapshots
+--var SONATYPE_URL=http://sonatype:8081/repository/maven-internal
 
 --env ACTIONS_CACHE_URL=http://github-cache-server:8080/
 --env ACTIONS_RUNTIME_URL=http://github-cache-server:8080/
