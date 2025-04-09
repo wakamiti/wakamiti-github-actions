@@ -59,6 +59,7 @@ jobs:
       - name: SonarQube Analysis
         if: ${{ inputs.analyze && hashFiles('**/src/**') != '' }}
         env:
+          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         working-directory: ${{ inputs.working-directory }}
         run: |
