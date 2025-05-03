@@ -1,0 +1,10 @@
+{
+    "request": {
+        "method": "POST",
+        "urlPattern": "/test"
+    },
+    "response": {
+        "status": 200,
+        "jsonBody": { }
+    }
+}

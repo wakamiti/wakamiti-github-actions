@@ -17,8 +17,8 @@ if "%~1"=="" (
 EXIT /B 0
 
 :install
-  mkdir "target/cache" >nul
-  docker compose up -d --wait
+  mkdir "target/cache" >nul 2>&1
+  docker compose up -d --wait --quiet-pull
   cd "target/cache"
   git config --global advice.detachedHead "false"
 
@@ -36,12 +36,14 @@ EXIT /B 0
 EXIT /B 0
 
 :test
-  mkdir target\tests >nul
+  mkdir target\tests >nul 2>&1
   if "%~1"=="" (
       for /F "tokens=1-4 delims= " %%a in (.tests) do (
-        IF "%%d" NEQ "" set "w=-W ../../workflows/%%d.yml"
-        set "command=-vv %%a -C test/%%b -e ../_data/events/%%c.json !w!"
-        set "log_file=target\tests\%%b-%%c.log"
+        IF "%%d" NEQ "" set "w=-W ../../../workflows/%%d.yml"
+        set "id=%%b-%%c"
+        xcopy /q/i/y "test/%%b" "test/target/!id!" >nul
+        set "command=-vv %%a -C test/target/!id! -e ../../_data/events/%%c.json !w!"
+        set "log_file=target\tests\!id!.log"
         echo Test "act !command!"
         act !command! > !log_file! 2>&1
         for /F "skip=1 tokens=2 delims= " %%J in ('act !command! --list 2^>nul') do (
