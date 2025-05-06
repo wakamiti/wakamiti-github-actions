@@ -5,14 +5,15 @@
 --var PACKAGES_URL=http://sonatype:8081/repository/maven-snapshots
 --var SONATYPE_URL=http://sonatype:8081/repository/maven-internal
 
+--env GITHUB_API_URL=http://mockserver:8080/
 --env ACTIONS_CACHE_URL=http://github-cache-server:8080/
 --env ACTIONS_RUNTIME_URL=http://github-cache-server:8080/
 --env ACTIONS_RUNTIME_TOKEN=password
 
---secret GITHUB_TOKEN=admin123
+--secret GITHUB_TOKEN=xK9#mP2@
 --secret SONAR_TOKEN=Sonar@123456
 
--W ../../workflows
+-W ../../../workflows
 
 --network act-test-network
 --action-cache-path target/cache
@@ -21,4 +22,4 @@
 --log-prefix-job-id
 --action-offline-mode
 --insecure-secrets
--a admin
+-a tester
