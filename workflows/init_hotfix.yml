@@ -1,0 +1,8 @@
+name: Init hotfix
+on:
+  workflow_dispatch:
+
+jobs:
+  snapshot:
+    uses: wakamiti/wakamiti-github-actions/.github/workflows/hotfix.yml@main
+    secrets: inherit

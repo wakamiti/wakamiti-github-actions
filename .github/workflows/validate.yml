@@ -1,11 +1,23 @@
+# Workflow name: Validate Code
+# This GitHub Actions workflow validates the code by building, testing, and optionally analyzing it with SonarQube.
+
 name: Validate Code
 on:
   workflow_call:
     inputs:
+      # Input: working-directory
+      # - Optional input specifying the working directory for the workflow.
+      # - Type: string
+      # - Default: "."
       working-directory:
         required: false
         type: string
         default: "."
+
+      # Input: analyze
+      # - Optional input to determine whether SonarQube analysis should be performed.
+      # - Type: boolean
+      # - Default: true
       analyze:
         required: false
         type: boolean
@@ -19,11 +31,17 @@ jobs:
       GITHUB_ACTOR: ${{ github.actor }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      # Step: Checkout code
+      # - Checks out the repository code.
+      # - Fetch-depth is set to 0 to ensure the full history is available for analysis.
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
+          fetch-depth: 0
 
+      # Step: Set up JDK
+      # - Sets up Java Development Kit (JDK) version 17 using the Temurin distribution.
+      # - Caches Maven dependencies for faster builds.
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
@@ -32,6 +50,8 @@ jobs:
           cache: maven
           overwrite-settings: 'false'
 
+      # Step: Cache SonarCloud packages
+      # - Caches SonarCloud dependencies to speed up the analysis process.
       - name: Cache SonarCloud packages
         uses: actions/cache@v4
         with:
@@ -39,12 +59,16 @@ jobs:
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
 
+      # Step: Cache Maven settings
+      # - Caches Maven settings file to avoid re-downloading it.
       - name: Cache Maven settings
         uses: actions/cache@v4
         with:
           path: ~/.m2/settings.xml
-          key: settings-xml-${{ hashFiles('setup/maven-config.json') }}
+          key: settings-xml
 
+      # Step: Cache Maven packages
+      # - Caches Maven dependencies to reduce build time.
       - name: Cache Maven packages
         uses: actions/cache@v4
         with:
@@ -52,10 +76,16 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
 
+      # Step: Build & Test
+      # - Builds the project and runs tests using Maven.
+      # - Uses the specified working directory.
       - name: Build & Test
         working-directory: ${{ inputs.working-directory }}
         run: mvn -B clean install
 
+      # Step: SonarQube Analysis
+      # - Performs SonarQube analysis if the 'analyze' input is true and there are changes in the source files.
+      # - Requires SonarQube host URL and token to be set as environment variables.
       - name: SonarQube Analysis
         if: ${{ inputs.analyze && hashFiles('**/src/**') != '' }}
         env:

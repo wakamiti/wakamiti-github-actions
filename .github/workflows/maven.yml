@@ -1,3 +1,7 @@
+# Workflow Name: Create Maven Config
+# This GitHub Actions workflow generates and caches Maven settings for dependency management
+# and artifact deployment to GitHub Packages and Sonatype repositories.
+
 name: Create Maven Config
 on:
   workflow_call:
@@ -10,13 +14,23 @@ jobs:
       SONATYPE_URL: ${{ vars.SONATYPE_URL }}
       PACKAGES_URL: ${{ vars.PACKAGES_URL }}
     steps:
+      # Step: Cache Maven settings
+      # - Attempts to restore cached settings.xml file
+      # - Cache key is based on file content
       - name: Cache Maven settings
         id: maven-cache
         uses: actions/cache@v4
         with:
           path: ~/.m2/settings.xml
-          key: settings-xml-${{ hashFiles('setup/maven-config.json') }}
+          key: settings-xml
 
+      # Step: Create settings.xml
+      # - Generates Maven settings if not found in cache
+      # - Configures:
+      #   * GitHub authentication credentials
+      #   * Repository settings for snapshots and releases
+      #   * Plugin repository configuration
+      #   * Wakamiti profile activation
       - name: Create settings.xml
         if: steps.maven-cache.outputs.cache-hit != 'true'
         run: |
@@ -32,14 +46,14 @@ jobs:
                   <repositories>
                     <repository>
                       <id>github</id>
-                      <url>${PACKAGES_URL}</url>
+                      <url>${PACKAGES_URL}/*</url>
                       <snapshots><enabled>true</enabled></snapshots>
                     </repository>
                   </repositories>
                   <pluginRepositories>
                     <pluginRepository>
                       <id>github</id>
-                      <url>${PACKAGES_URL}</url>
+                      <url>${PACKAGES_URL}/*</url>
                       <snapshots><enabled>true</enabled></snapshots>
                     </pluginRepository>
                   </pluginRepositories>
