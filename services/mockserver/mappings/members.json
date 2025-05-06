@@ -1,0 +1,21 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPattern": "/orgs/wakamiti/teams/reviewers/members"
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": [
+      {
+        "login": "member1"
+      },
+      {
+        "login": "member2"
+      }
+    ],
+    "headers": {
+      "Content-Type": "application/json",
+      "X-RateLimit-Limit": "5000"
+    }
+  }
+}
