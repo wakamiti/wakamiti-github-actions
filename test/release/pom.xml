@@ -31,19 +31,6 @@
         <url>git://github.com/wakamiti/wakamiti-github-actions.git</url>
     </scm>
 
-    <distributionManagement>
-        <repository>
-            <id>ossrh</id>
-            <name>Central Repository OSSRH</name>
-            <url>http://sonatype:8081/repository/maven-internal</url>
-        </repository>
-        <snapshotRepository>
-            <id>github</id>
-            <name>GitHub Packages</name>
-            <url>http://sonatype:8081/repository/maven-snapshots</url>
-        </snapshotRepository>
-    </distributionManagement>
-
     <properties>
         <!-- encoding -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -56,4 +43,19 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
     </properties>
 
+<!--    <build>-->
+<!--        <plugins>-->
+<!--            <plugin>-->
+<!--                <groupId>org.sonatype.central</groupId>-->
+<!--                <artifactId>central-publishing-maven-plugin</artifactId>-->
+<!--                <version>0.7.0</version>-->
+<!--                <extensions>true</extensions>-->
+<!--                <configuration>-->
+<!--                    <publishingServerId>central</publishingServerId>-->
+<!--                    <autoPublish>true</autoPublish>-->
+<!--                    <centralBaseUrl>http://sonatype:8081/repository/maven-internal</centralBaseUrl>-->
+<!--                </configuration>-->
+<!--            </plugin>-->
+<!--        </plugins>-->
+<!--    </build>-->
 </project>
