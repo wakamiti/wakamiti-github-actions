@@ -47,6 +47,8 @@ services:
       context: services/github-cache-server
       args:
         - AUTH_KEY=password
+    environment:
+      ADMIN_USERNAME: tester
     container_name: act_server
 #    ports:
 #      - '8080:8080'
@@ -54,22 +56,6 @@ services:
 #      - ./target/actcache/server:/usr/src/app/.caches
 #      - ./target/actcache/db:/usr/local/etc/
 
-#  github-packages:
-#    image: releases-docker.jfrog.io/jfrog/artifactory-oss:7.49.6
-#    container_name: act_packages
-##    ports:
-##      - "8081:8081"
-##      - "8082:8082"
-#    environment:
-#      ARTIFACTORY_HOME: /var/opt/jfrog/artifactory
-#    command: /data/init.sh
-#    volumes:
-#      - ./services/scripts/packages_init.sh:/data/init.sh
-#    healthcheck:
-#      test: [ "CMD", "curl", "-f", "http://localhost:8081/artifactory/api/system/ping" ]
-#      interval: 10s
-#      timeout: 20s
-#      retries: 20
 
   sonatype:
     image: sonatype/nexus3:3.49.0
@@ -77,7 +63,7 @@ services:
 #    ports:
 #      - "8083:8081"
     environment:
-      NEXUS_SECURITY_RANDOMPASSWORD: "false"  # Password fijo admin123
+      NEXUS_SECURITY_RANDOMPASSWORD: "false"  # Password fijo xK9#mP2@
     command: /data/init.sh
     volumes:
       - ./services/scripts/sonatype_init.sh:/data/init.sh
@@ -87,12 +73,34 @@ services:
       timeout: 20s
       retries: 20
 
-#  mockserver:
-#    image: "wiremock/wiremock:3.6.0"
-#    container_name: act_mockserver
-#    command: "--port 8080 --https-port 443 --verbose"
-#    volumes:
-#      - "./services/mockserver:/home/wiremock"
+  gitserver:
+    image: gitlab/gitlab-ce
+    container_name: act_git
+    ports:
+      - "8000:80"
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        gitlab_rails['gitlab_shell_ssh_port'] = 22
+        gitlab_rails['initial_root_password'] = 'xK9#mP2@'
+        gitlab_rails['store_initial_root_password'] = true
+        nginx['redirect_http_to_https'] = true
+        nginx['ssl_certificate'] = "/etc/gitlab/ssl/gitlab.crt"
+        nginx['ssl_certificate_key'] = "/etc/gitlab/ssl/gitlab.key"
+    command: /data/init.sh
+    volumes:
+      - ./services/scripts/git_init.sh:/data/init.sh
+    healthcheck:
+      test: [ "CMD", "[ -s /root/token ]" ]
+      interval: 20s
+      timeout: 20s
+      retries: 30
+
+  mockserver:
+    image: "wiremock/wiremock:3.6.0"
+    container_name: act_mockserver
+    command: "--port 8080 --https-port 443 --verbose"
+    volumes:
+      - "./services/mockserver:/home/wiremock"
 
 networks:
   default:
