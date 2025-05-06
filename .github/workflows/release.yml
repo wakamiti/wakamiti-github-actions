@@ -1,7 +1,15 @@
-name: Create Release Branch
+# Workflow Name: Create new release
+# This GitHub Actions workflow automates the release process by creating a new release branch,
+# updating version numbers, and creating a pull request for review.
+
+name: Create new release
 on:
   workflow_call:
     inputs:
+      # Input: working-directory
+      # - Optional working directory for the workflow
+      # - Type: string
+      # - Default: "."
       working-directory:
         required: false
         type: string
@@ -9,11 +17,16 @@ on:
 
 jobs:
   release:
-    name: Create release branch
+    name: Create release
     runs-on: ubuntu-latest
     steps:
+      # Step: Checkout code
+      # - Clones the repository
       - uses: actions/checkout@v4
 
+      # Step: Prepare branch
+      # - Checks out develop branch
+      # - Validates existence of CHANGELOG.md
       - name: Prepare branch
         working-directory: ${{ inputs.working-directory }}
         run: |
@@ -25,15 +38,19 @@ jobs:
           fi
           echo "CHANGELOG=$CHANGELOG" >> $GITHUB_ENV
 
+      # Step: Check version
+      # - Validates changelog format and version requirements
+      # - Ensures the current version is a SNAPSHOT
+      # - Verifies version doesn't already exist in changelog
       - name: Check version
         working-directory: ${{ inputs.working-directory }}
         run: |
           if [ ! -f "${{ env.CHANGELOG }}" ]; then
-            echo "::error::${{ env.CHANGELOG }} file does not exists."
+            echo "::error::${{ env.CHANGELOG }} file does not exist."
             exit 1
           fi
           if ! grep -iq "\[unreleased\]" ${{ env.CHANGELOG }}; then 
-            echo "::error::${{ env.CHANGELOG }} must contains an [unreleased] block."
+            echo "::error::${{ env.CHANGELOG }} must contain an [unreleased] block."
             exit 1
           fi
           snapshot=$(mvn -q help:evaluate -Dexpression=project.version -DforceStdout)
@@ -48,13 +65,19 @@ jobs:
           fi
           echo "VERSION=$version" >> $GITHUB_ENV
 
+      # Step: Initialize git config
+      # - Creates new 'release' branch from 'develop'
       - name: Initialize mandatory git config
         working-directory: ${{ inputs.working-directory }}
         run: |
-          git config user.name "GitHub Actions"
+          git config user.name "${{ github.actor }}"
           git config user.email noreply@github.com
           git checkout -b release/v${{ env.VERSION }} develop
 
+      # Step: Change version
+      # - Updates version in pom.xml (supports revision property)
+      # - Updates changelog by replacing [unreleased] with version
+      # - Extracts changelog body for PR
       - name: Change version
         id: change-version
         working-directory: ${{ inputs.working-directory }}
@@ -62,13 +85,16 @@ jobs:
           snapshot=$(mvn -q help:evaluate -Dexpression=project.version -DforceStdout)
           if [[ $snapshot == $(mvn -q help:evaluate -Dexpression=revision -DforceStdout) ]]; then
             mvn versions:set-property -Dproperty=revision -DnewVersion=${{ env.VERSION }} -DgenerateBackupPoms=false
-          else 
+          else
             mvn versions:set -DnewVersion=${{ env.VERSION }} -DgenerateBackupPoms=false
           fi
           body=$(sed -n '/^## \[unreleased\]/,/^## \[/p' ${{ env.CHANGELOG }} | sed '/^## \[/d' | sed ':a;N;$!ba;s/\n/\\n/g')
-          cat ${{ env.CHANGELOG }} | sed "s/\[unreleased\]/[${{ env.VERSION }}] - $(date +%F)/" > ${{ env.CHANGELOG }}
+          sed -i "s/\[unreleased\]/[${{ env.VERSION }}] - $(date +%F)/" ${{ env.CHANGELOG }}
           echo "PR_BODY=$body" >> $GITHUB_ENV
 
+      # Step: Commit and push
+      # - Commits version changes
+      # - Pushes release branch
       - name: Commit and push
         working-directory: ${{ inputs.working-directory }}
         run: |
@@ -76,6 +102,8 @@ jobs:
           git commit --message "Prepare release ${{ env.VERSION }}"
           git push origin release/v${{ env.VERSION }}
 
+      # Step: Get reviewers
+      # - Fetches list of team reviewers from GitHub API
       - name: Get reviewers
         id: get-reviewers
         shell: bash
@@ -85,12 +113,16 @@ jobs:
           GH_TOKEN:  ${{ secrets.API_TOKEN }}
         run: echo data=$(gh api orgs/$ORG/teams/$TEAM/members | jq -r 'map(.login) | join(",")') >> "$GITHUB_OUTPUT"
 
+      # Step: Create pull request
+      # - Creates PR from release branch to main
+      # - Adds changelog content to PR body
+      # - Assigns team reviewers
       - name: create pull request
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REVIEWERS: ${{ steps.get-reviewers.outputs.data }}
-        run: | 
+        run: |
           echo -e "${{ env.PR_BODY }}" | gh pr create -B main -H release/v${{ env.VERSION }} -r $REVIEWERS \
             --title 'Release version v${{ env.VERSION }}' \
             --body-file -

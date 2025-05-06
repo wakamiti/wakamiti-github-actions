@@ -1,92 +1,14 @@
 name: Create Release Branch
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
 
 jobs:
+  config:
+    name: Maven Configuration
+    uses: wakamiti/wakamiti-github-actions/.github/workflows/maven.yml@main
+    secrets: inherit
+
   release:
-    name: Create release branch
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Prepare branch
-        working-directory: ${{ inputs.working-directory }}
-        run: |
-          git checkout develop
-          CHANGELOG=$(ls | grep -i "changelog.md")
-          if [ -z "$CHANGELOG" ]; then
-            echo "::error::CHANGELOG.md file does not exist."
-            exit 1
-          fi
-          echo "CHANGELOG=$CHANGELOG" >> $GITHUB_ENV
-
-      - name: Check version
-        working-directory: ${{ inputs.working-directory }}
-        run: |
-          if [ ! -f "${{ env.CHANGELOG }}" ]; then
-            echo "::error::${{ env.CHANGELOG }} file does not exists."
-            exit 1
-          fi
-          if ! grep -iq "\[unreleased\]" ${{ env.CHANGELOG }}; then 
-            echo "::error::${{ env.CHANGELOG }} must contains an [unreleased] block."
-            exit 1
-          fi
-          snapshot=$(mvn -q help:evaluate -Dexpression=project.version -DforceStdout)
-          if [[ ! $snapshot =~ -SNAPSHOT$ ]]; then
-            echo "::error::Current version $snapshot is not a snapshot."
-            exit 1
-          fi
-          version=$(echo "$snapshot" | sed 's/-SNAPSHOT//')
-          if grep -iq "\[$version\]" ${{ env.CHANGELOG }}; then
-            echo "::error::Current version $version already exists in ${{ env.CHANGELOG }}."
-            exit 1
-          fi
-          echo "VERSION=$version" >> $GITHUB_ENV
-
-      - name: Initialize mandatory git config
-        working-directory: ${{ inputs.working-directory }}
-        run: |
-          git config user.name "GitHub Actions"
-          git config user.email noreply@github.com
-          git checkout -b release/v${{ env.VERSION }} develop
-
-      - name: Change version
-        id: change-version
-        working-directory: ${{ inputs.working-directory }}
-        run: |
-          snapshot=$(mvn -q help:evaluate -Dexpression=project.version -DforceStdout)
-          if [[ $snapshot == $(mvn -q help:evaluate -Dexpression=revision -DforceStdout) ]]; then
-            mvn versions:set-property -Dproperty=revision -DnewVersion=${{ env.VERSION }} -DgenerateBackupPoms=false
-          else 
-            mvn versions:set -DnewVersion=${{ env.VERSION }} -DgenerateBackupPoms=false
-          fi
-          body=$(sed -n '/^## \[unreleased\]/,/^## \[/p' ${{ env.CHANGELOG }} | sed '/^## \[/d' | sed ':a;N;$!ba;s/\n/\\n/g')
-          cat ${{ env.CHANGELOG }} | sed "s/\[unreleased\]/[${{ env.VERSION }}] - $(date +%F)/" > ${{ env.CHANGELOG }}
-          echo "PR_BODY=$body" >> $GITHUB_ENV
-
-      - name: Commit and push
-        working-directory: ${{ inputs.working-directory }}
-        run: |
-          git add .
-          git commit --message "Prepare release ${{ env.VERSION }}"
-          git push origin release/v${{ env.VERSION }}
-
-      - name: Get reviewers
-        id: get-reviewers
-        shell: bash
-        env:
-          ORG: ${{ github.repository_owner }}
-          TEAM: 'reviewers'
-          GH_TOKEN:  ${{ secrets.API_TOKEN }}
-        run: echo data=$(gh api orgs/$ORG/teams/$TEAM/members | jq -r 'map(.login) | join(",")') >> "$GITHUB_OUTPUT"
-
-      - name: create pull request
-        shell: bash
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REVIEWERS: ${{ steps.get-reviewers.outputs.data }}
-        run: | 
-          echo -e "${{ env.PR_BODY }}" | gh pr create -B main -H release/v${{ env.VERSION }} -r $REVIEWERS \
-            --title 'Release version v${{ env.VERSION }}' \
-            --body-file -
+    uses: wakamiti/wakamiti-github-actions/.github/workflows/release.yml@main
+    needs: config
+    secrets: inherit
