@@ -1,17 +1,21 @@
 
---platform ubuntu-latest=catthehacker/ubuntu:java-tools-latest
+--platform ubuntu-latest=act-with-gh
 
 --var SONAR_HOST_URL=http://localhost:9000
 --var PACKAGES_URL=http://sonatype:8081/repository/maven-snapshots
 --var SONATYPE_URL=http://sonatype:8081/repository/maven-internal
 
---env GITHUB_API_URL=http://mockserver:8080/
+--env GH_HOST=mockserver:8443
 --env ACTIONS_CACHE_URL=http://github-cache-server:8080/
 --env ACTIONS_RUNTIME_URL=http://github-cache-server:8080/
 --env ACTIONS_RUNTIME_TOKEN=password
+--env NODE_TLS_REJECT_UNAUTHORIZED=0
+--env GH_SSL_NO_VERIFY=1
+--env GITHUB_REPOSITORY=usuario/repositorio
+--env GITHUB_ACTOR=usuario
 
 --secret GITHUB_TOKEN=xK9#mP2@
---secret SONAR_TOKEN=Sonar@123456
+--secret API_TOKEN=abc123
 
 -W ../../../workflows
 
