@@ -12,6 +12,8 @@ IF %ERRORLEVEL% NEQ 0 (
     EXIT /B 0
 )
 
+CALL :setESC
+
 :: If no command provided, run the complete sequence
 if "%~1"=="" (
     CALL :install
@@ -25,14 +27,18 @@ EXIT /B 0
 
 :install
   :: Prepares environment and clones dependencies
+
   :: - Creates cache directory
-  :: - Starts Docker containers
-  :: - Clones repositories defined in .caches
   mkdir "target/cache" >nul 2>&1
-  docker compose up -d --wait --quiet-pull
+  :: - Starts Docker containers
+  docker compose up -d --wait --quiet-pull --build
+  :: - Stores the mockserver certificate to use it from the act container
+  docker cp act_mockserver:/certs/mockserver.crt target\mockserver.crt
+  docker build -t act-with-gh .
   cd "target/cache"
   git config --global advice.detachedHead "false"
 
+  :: - Clones repositories defined in .caches
   for /F "tokens=1-2 delims= " %%a in (..\..\.caches) do (
       set "repo=%%a"
       call set repo=%%repo:/=-%%
@@ -48,45 +54,54 @@ EXIT /B 0
 
 :test
   :: Executes tests defined in .tests
+
   :: - Creates directory for results
-  :: - For each test:
-  ::   - Copies test files
-  ::   - Initializes git repository
-  ::   - Runs tests with act
-  ::   - Displays results
   mkdir target\tests >nul 2>&1
   if "%~1"=="" (
+      :: - For each test:
       for /F "usebackq tokens=1-4 eol=# delims= " %%a in (".tests") do (
         echo Tokens: [%%a] [%%b] [%%c] [%%d]
         IF "%%d" NEQ "" set "w=-W ../../../workflows/%%d.yml"
         set "id=%%b-%%c"
+        set "log_file=target\tests\!id!.log"
+
+        :: - Copies test files
         xcopy /q/i/y "test/%%b" "test/target/!id!"
         cd "test/target/!id!"
-        FOR /F "tokens=*" %%a in ('docker exec -ti act_git sh -c "cat /root/token"') do (
-          set "token=%%a"
-          docker exec act_git curl -s --header "PRIVATE-TOKEN: !token!" ^
-            -X POST "http://localhost/api/v4/projects" -F "name=!id!" -F "visibility=public"
-          git init --initial-branch=main
-          git config --local user.name "tester"
-          git config --local user.email "tester@example.com"
-          git checkout -b develop
-          git remote add origin http://tester:!token!@localhost:8000/tester/!id!.git
-          git add .
-          git commit -m "Initial commit"
-          git push --set-upstream origin develop
+
+        :: - Retrieves git token
+        for /F "tokens=*" %%i in ('docker exec -ti act_git sh -c "cat /root/token"') do set "token=%%i"
+
+        :: - Initializes git repository
+        for %%i in (
+          "init --initial-branch=main",
+          "config --local user.name tester",
+          "config --local user.email tester@example.com",
+          "checkout -b develop",
+          "remote add origin http://tester:!token!@localhost:8000/tester/!id!.git",
+          "add .",
+          "commit -m 'Initial commit'",
+          "push --set-upstream origin develop",
+          "remote set-url origin http://tester:!token!@gitserver/tester/!id!.git"
+        ) do (
+          set "command=%%~i" & set "command=!command:'="!"
+          git !command! >> ..\..\..\!log_file! 2>&1 || EXIT /B %ERRORLEVEL%
         )
+
         cd ..\..\..
         set "command=-vv %%a -C test/target/!id! -e ../../_data/events/%%c.json !w!"
-        set "log_file=target\tests\!id!.log"
+
         echo Test "act !command!"
-        act !command! > !log_file! 2>&1
+        act !command! >> !log_file! 2>&1
+        :: - Runs tests with act
         for /F "skip=1 tokens=2 delims= " %%J in ('act !command! --list 2^>nul') do (
           set "job=%%J"
+          :: - Displays results
           findstr /b /c:"[!job!] " !log_file! | findstr /c:" Job succeeded" >nul && (
-             echo Job [!job!] SUCCESS
+             echo Job [!job!] !ESC![32mSUCCESS!ESC![0m
           ) || (
              findstr /c:"Skipping job '!job!'" !log_file! >nul || (
-                echo Job [!job!] FAILED
+                echo Job [!job!] !ESC![31mFAILED!ESC![0m
              )
           )
         )
@@ -98,15 +113,27 @@ EXIT /B 0
 
 :clean
   :: Cleans up environment
-  :: - Stops Docker containers
+
+  :: - Remove all repositories
+  docker exec act_git /scripts/delete_repos.sh
   :: - Removes specific containers
-  :: - Removes target directories
-  docker compose down
-  :: remove docker containers
-  for /F %%i in ('docker ps --filter ancestor^=catthehacker/ubuntu:java-tools-latest --format {{.ID}}') do (
+  for /F %%i in ('docker ps --filter ancestor^=act-with-gh --format {{.ID}}') do (
     set "container=%%i"
     docker rm -f !container! >nul
   )
+  :: - Removes target directories
+  FOR /d /r . %%d IN (test/target) DO @IF EXIST "%%d" rd /s /q "%%d"
+  FOR /d /r . %%d IN (target/tests) DO @IF EXIST "%%d" rd /s /q "%%d"
+EXIT /B 0
+
+:shutdown
+  :: - Stops Docker containers
+  for /F %%i in ('docker ps --filter ancestor^=act-with-gh --format {{.ID}}') do (
+    set "container=%%i"
+    docker rm -f !container! >nul
+  )
+  docker compose down
+  :: - Removes target directories
   FOR /d /r . %%d IN (target) DO @IF EXIST "%%d" rd /s /q "%%d"
 EXIT /B 0
 
@@ -120,6 +147,12 @@ EXIT /B 0
   xcopy /q/i/y "../../../.github/workflows" ".github/workflows"
   git init --quiet && git switch -c main --quiet
 EXIT /B 0
+
+:setESC
+  for /F "tokens=1,2 delims=#" %%a in ('"prompt #$H#$E# & echo on & for %%b in (1) do rem"') do (
+    set ESC=%%b
+    exit /B 0
+  )
 
 :prueba
   echo test

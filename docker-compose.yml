@@ -2,46 +2,6 @@ version: '3.8'
 
 services:
 
-#  sonarqube:
-#    image: sonarqube:community
-#    container_name: act_sonar
-#    ports:
-#      - "9000:9000"
-#    environment:
-#      SONAR_JDBC_URL: jdbc:postgresql://postgres:5432/sonarqube
-#      SONAR_JDBC_USERNAME: sonar
-#      SONAR_JDBC_PASSWORD: sonar
-#      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
-#      ADMIN_PASSWORD: "Sonar@123456"
-#    command: /data/init.sh
-#    volumes:
-#      - ./services/scripts/sonarqube_init.sh:/data/init.sh
-#      - ./services/out:/out
-#    depends_on:
-#      postgres:
-#        condition: service_healthy
-#    healthcheck:
-#      test: [ "CMD", "curl", "-f", "http://localhost:9000/api/system/status" ]
-#      interval: 5s
-#      timeout: 10s
-#      retries: 20
-#    ulimits:
-#      nofile:
-#        soft: 65536
-#        hard: 65536
-#  postgres:
-#    image: postgres:13
-#    container_name: act_sonar_db
-#    environment:
-#      POSTGRES_USER: sonar
-#      POSTGRES_PASSWORD: sonar
-#      POSTGRES_DB: sonarqube
-#    healthcheck:
-#      test: "pg_isready --username=sonar && psql --username=sonar --list"
-#      interval: 10s
-#      timeout: 5s
-#      retries: 5
-
   github-cache-server:
     build:
       context: services/github-cache-server
@@ -50,18 +10,10 @@ services:
     environment:
       ADMIN_USERNAME: tester
     container_name: act_server
-#    ports:
-#      - '8080:8080'
-#    volumes:
-#      - ./target/actcache/server:/usr/src/app/.caches
-#      - ./target/actcache/db:/usr/local/etc/
-
 
   sonatype:
     image: sonatype/nexus3:3.49.0
     container_name: act_nexus
-#    ports:
-#      - "8083:8081"
     environment:
       NEXUS_SECURITY_RANDOMPASSWORD: "false"  # Password fijo xK9#mP2@
     command: /data/init.sh
@@ -89,18 +41,31 @@ services:
     command: /data/init.sh
     volumes:
       - ./services/scripts/git_init.sh:/data/init.sh
+      - ./services/gitserver:/scripts
     healthcheck:
-      test: [ "CMD", "[ -s /root/token ]" ]
-      interval: 20s
+      test: [ "CMD", "sh", "-c", "test -s /root/token || exit 1" ]
+      interval: 10s
       timeout: 20s
-      retries: 30
+      retries: 60
+      start_period: 300s
 
   mockserver:
-    image: "wiremock/wiremock:3.6.0"
+    build:
+      context: ./services/mockserver
     container_name: act_mockserver
-    command: "--port 8080 --https-port 443 --verbose"
+    command: >
+      --disable-http
+      --https-port 8443 
+      --https-keystore /certs/mockserver.jks
+      --verbose
     volumes:
       - "./services/mockserver:/home/wiremock"
+    healthcheck:
+      test: [ "CMD", "curl", "-k", "https://localhost:8443/__admin/mappings" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 
 networks:
   default:
