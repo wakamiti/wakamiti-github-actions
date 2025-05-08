@@ -4,7 +4,7 @@
 while ! curl -sSf http://localhost:8081/service/rest/v1/status > /dev/null; do sleep 10; done
 
 # Cambiar el nombre de usuario del administrador a 'tester'
-curl -u admin:xK9#mP2@ -X PUT 'http://localhost:8081/service/rest/v1/security/users/admin' \
+curl -u admin:admin123 -X POST 'http://localhost:8081/service/rest/v1/security/users' \
   -H 'Content-Type: application/json' \
   -d '{
     "userId": "tester",
@@ -13,7 +13,8 @@ curl -u admin:xK9#mP2@ -X PUT 'http://localhost:8081/service/rest/v1/security/us
     "emailAddress": "tester@example.com",
     "password": "xK9#mP2@",
     "status": "active",
-    "roles": ["nx-admin"]
+    "roles": ["nx-admin"],
+    "source": "default"
   }'
 
 # Crear repositorios
