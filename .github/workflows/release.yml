@@ -111,7 +111,7 @@ jobs:
           ORG: ${{ github.repository_owner }}
           TEAM: 'reviewers'
           GH_TOKEN:  ${{ secrets.API_TOKEN }}
-        run: echo data=$(gh api orgs/$ORG/teams/$TEAM/members | jq -r 'map(.login) | join(",")') >> "$GITHUB_OUTPUT"
+        run: echo data=$(gh api /orgs/$ORG/teams/$TEAM/members | jq -r 'map(.login)') >> "$GITHUB_OUTPUT"
 
       # Step: Create pull request
       # - Creates PR from release branch to main
@@ -121,8 +121,13 @@ jobs:
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REVIEWERS: ${{ steps.get-reviewers.outputs.data }}
+          REPO: ${{ github.repository }}
         run: |
-          echo -e "${{ env.PR_BODY }}" | gh pr create -B main -H release/v${{ env.VERSION }} -r $REVIEWERS \
-            --title 'Release version v${{ env.VERSION }}' \
-            --body-file -
+          PR=$(gh api -X POST /repos/$REPO/pulls \
+            -F base='main' \
+            -F head="release/v${{ env.VERSION }}" \
+            -F title="Release version v${{ env.VERSION }}" \
+            -F body="${{ env.PR_BODY }}" \
+            --jq '.id')
+          echo '{ "reviewers":${{ steps.get-reviewers.outputs.data }} }' | \
+          gh api -X POST /repos/$REPO/pulls/$PR/requested_reviewers --input -
