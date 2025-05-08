@@ -1,0 +1,15 @@
+{
+  "request": {
+    "method": "POST",
+    "urlPattern": "/api/v3/repos/.*/.*/pulls/.*/requested_reviewers",
+    "bodyPatterns": [
+      {
+        "matchesJsonPath": "$.reviewers",
+        "equalToJson": ["member1","member2"]
+      }
+    ]
+  },
+  "response": {
+    "status": 201
+  }
+}
