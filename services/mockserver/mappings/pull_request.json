@@ -1,39 +1,43 @@
 {
   "request": {
     "method": "POST",
-    "urlPattern": "/repos/wakamiti/.*/pulls",
+    "urlPattern": "/api/v3/repos/.*/.*/pulls",
     "bodyPatterns": [
       {
         "matchesJsonPath": "$.title",
         "contains": "Release version v0.0.1"
       },
       {
-        "matchesJsonPath": "$.base.ref",
+        "matchesJsonPath": "$.base",
         "equalTo": "main"
       },
       {
-        "matchesJsonPath": "$.head.ref",
+        "matchesJsonPath": "$.head",
         "equalTo": "release/v0.0.1"
       },
       {
         "matchesJsonPath": "$.body",
         "contains": "Initial release."
-      },
-      {
-        "matchesJsonPath": "$.requested_reviewers[*].login",
-        "equalToJson": ["member1", "member2"]
       }
     ]
   },
   "response": {
     "status": 201,
     "jsonBody": {
-      "id": 1234,
-      "number": 123,
-      "state": "open",
-      "title": "Release version v1.0.0",
-      "body": "Mock PR body response",
-      "html_url": "https://github.com/wakamiti/repo/pull/123"
+      "id": 1,
+      "title": "Release version v0.0.1",
+      "user": {
+        "login": "usuario",
+        "id": 1
+      },
+      "body": "\nInitial release.",
+      "labels": [
+        {
+          "id": 208045946,
+          "name": "bug",
+          "description": "Something isn't working"
+        }
+      ]
     },
     "headers": {
       "Content-Type": "application/json",
