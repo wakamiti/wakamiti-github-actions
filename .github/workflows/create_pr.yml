@@ -1,0 +1,51 @@
+name: Create Pull Request
+on:
+  workflow_call:
+    inputs:
+      base:
+        type: string
+        required: false
+        default: main
+      head:
+        type: string
+        required: true
+      title:
+        type: string
+        required: true
+      body:
+        type: string
+        required: true
+
+jobs:
+  pr:
+    name: New Pull Request
+    runs-on: ubuntu-latest
+    env:
+      BASE: ${{ inputs.base }}
+      HEAD: ${{ inputs.head }}
+      TITLE: ${{ inputs.title }}
+      PR_BODY: ${{ inputs.body }}
+    steps:
+
+        # Step: Create pull request
+        # - Fetches list of team reviewers from GitHub API
+        # - Creates PR from release branch to main
+        # - Adds changelog content to PR body
+        # - Assigns team reviewers
+        - name: create pull request
+          shell: bash
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            GH_TOKEN: ${{ secrets.API_TOKEN }}
+            ORG: ${{ github.repository_owner }}
+            REPO: ${{ github.repository }}
+            TEAM: 'reviewers'
+          run: |
+            PR=$(gh api -X POST /repos/$REPO/pulls \
+              -F base='${{ env.BASE }}' \
+              -F head="${{ env.HEAD }}" \
+              -F title="${{ env.TITLE }}" \
+              -F body="${{ env.PR_BODY }}" \
+              --jq '.id')
+            data=$(gh api /orgs/$ORG/teams/$TEAM/members | jq -r 'map(.login)')
+            echo '{ "reviewers":$data }' | gh api -X POST /repos/$REPO/pulls/$PR/requested_reviewers --input -

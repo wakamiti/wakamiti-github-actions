@@ -25,10 +25,7 @@ jobs:
     steps:
       # Step: Checkout code
       # - Clones the repository
-      # - Disables shallow clone for better analysis relevancy
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       # Step: Setup JDK
       # - Configures JDK 17 using Temurin distribution

@@ -1,0 +1,77 @@
+name: Create Release Branch
+on:
+  workflow_dispatch:
+    inputs:
+      type:
+        required: true
+        description: "The release type"
+        type: choice
+        options:
+          - release
+          - hotfix
+  push:
+    branches:
+      - develop
+      - hotfix/**
+env:
+  BRANCH: ${{ github.event_name == 'workflow_dispatch' 
+    && (github.event.inputs.type == 'hotfix' && 'main' || 'develop')
+    || github.ref_name }}
+
+jobs:
+  # Comprueba si existe un commit #ready
+  commits:
+    name: Check commit ready
+    if: github.event_name != 'workflow_dispatch'
+    uses: wakamiti/wakamiti-github-actions/.github/workflows/commits.yml@main
+    secrets: inherit
+    with:
+      branch: ${{ env.BRANCH }}
+
+  # configura el entorno maven
+  config:
+    name: Maven Configuration
+    if: always() && (github.event_name == 'workflow_dispatch' || needs.commits.outputs.ready == 'true')
+    uses: wakamiti/wakamiti-github-actions/.github/workflows/maven.yml@main
+    secrets: inherit
+    needs: commits
+
+  # Comprueba el estado de la versión
+  status:
+    uses: wakamiti/wakamiti-github-actions/.github/workflows/status.yml@main
+    secrets: inherit
+    needs: config
+    with:
+      branch: ${{ env.BRANCH }}
+
+  # Inicia release (si es de develop)
+  init_release:
+    if: (github.event_name != 'workflow_dispatch' && github.ref_name == 'develop') || inputs.type == 'release'
+    uses: wakamiti/wakamiti-github-actions/.github/workflows/init_release.yml@main
+    secrets: inherit
+    needs: [config, status]
+    with:
+      branch: ${{ env.BRANCH }}
+      version: ${{ needs.status.outputs.version }}
+      
+
+  release:
+    uses: wakamiti/wakamiti-github-actions/.github/workflows/release.yml@main
+    secrets: inherit
+    needs: [config, status]
+    with:
+      branch: ${{ env.BRANCH }}
+      changelog: ${{ needs.status.outputs.changelog }}
+      version: ${{ needs.status.outputs.version }}
+      revision: ${{ needs.status.outputs.revision }}
+      type: ${{ inputs.type || (github.ref_name == 'develop' && 'release' || 'hotfix') }}
+
+  pr:
+    name: Pull Request
+    uses: wakamiti/wakamiti-github-actions/.github/workflows/create_pr.yml@main
+    secrets: inherit
+    needs: release
+    with:
+      head: ${{ needs.release.outputs.head }}
+      title: ${{ needs.release.outputs.title }}
+      body: ${{ needs.release.outputs.body }}

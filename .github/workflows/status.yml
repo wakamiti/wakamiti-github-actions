@@ -1,0 +1,102 @@
+
+name: Get version status
+on:
+  workflow_call:
+    inputs:
+      # Input: working-directory
+      # - Optional working directory for the workflow
+      # - Type: string
+      # - Default: "."
+      working-directory:
+        required: false
+        type: string
+        default: "."
+      branch:
+        required: false
+        type: string
+        default: develop
+    outputs:
+      changelog:
+        description: "The changelog name"
+        value: ${{ jobs.status.outputs.changelog }}
+      version:
+        description: "The current version"
+        value: ${{ jobs.status.outputs.version }}
+      revision:
+        description: "Flag indicating if the pom version is managed through the revision property"
+        value: ${{ jobs.status.outputs.revision }}
+
+jobs:
+  status:
+    name: Get status
+    runs-on: ubuntu-latest
+    outputs:
+      changelog: ${{ steps.changelog.outputs.CHANGELOG }}
+      version: ${{ steps.version.outputs.VERSION }}
+      revision: ${{ steps.version.outputs.REVISION }}
+    steps:
+      # Step: Checkout code
+      # - Clones the repository
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: git checkout ${{ inputs.branch }}
+
+        # Step: Set up JDK
+      # - Sets up Java Development Kit (JDK) version 17 using the Temurin distribution.
+      # - Caches Maven dependencies for faster builds.
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: maven
+          overwrite-settings: 'false'
+
+      # Step: Cache Maven settings
+      # - Caches Maven settings file to avoid re-downloading it.
+      - name: Cache Maven settings
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/settings.xml
+          key: settings-xml
+
+      # Step: Cache Maven packages
+      # - Caches Maven dependencies to reduce build time.
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      # Step: Prepare branch
+      # - Validates existence of CHANGELOG.md
+      - name: Prepare branch
+        id: changelog
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          CHANGELOG=$(ls | grep -i "changelog.md")
+          if [ -z "$CHANGELOG" ]; then
+            echo "::error::CHANGELOG.md file does not exist."
+            exit 1
+          fi
+          echo "CHANGELOG=$CHANGELOG" >> $GITHUB_OUTPUT
+
+      - name: Check version
+        id: version
+        working-directory: ${{ inputs.working-directory }}
+        env:
+          CHANGELOG: ${{ steps.changelog.outputs.CHANGELOG }}
+        run: |
+          if [ ! -f "${CHANGELOG}" ]; then
+            echo "::error::${CHANGELOG} file does not exist."
+            exit 1
+          fi
+          version=$(mvn -q help:evaluate -Dexpression=project.version -DforceStdout)
+          if [[ $version == $(mvn -q help:evaluate -Dexpression=revision -DforceStdout) ]]; then
+            echo "REVISION=true" >> $GITHUB_OUTPUT
+          else
+            echo "REVISION=false" >> $GITHUB_OUTPUT
+          fi
+          echo "VERSION=$version" >> $GITHUB_OUTPUT

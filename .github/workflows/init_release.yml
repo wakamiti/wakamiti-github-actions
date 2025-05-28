@@ -1,0 +1,40 @@
+on:
+  workflow_call:
+    inputs:
+      working-directory:
+        required: false
+        type: string
+        default: "."
+      version:
+        required: true
+        type: string
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ inputs.version }}
+    steps:
+      # Step: Checkout code
+      # - Checks out the repository code.
+      # - Fetch-depth is set to 0 to ensure the full history is available for analysis.
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: git checkout develop
+
+      - name: Check version
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          if [[ ! ${{ env.VERSION }} =~ -SNAPSHOT$ ]]; then
+            echo "::error::Current version ${VERSION} is not a snapshot."
+            exit 1
+          fi
+
+      - name: Initialize mandatory git config
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "noreply@github.com"
+          git checkout -b "release/v${VERSION}"
+          git push origin HEAD

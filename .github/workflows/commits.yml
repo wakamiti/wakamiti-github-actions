@@ -1,0 +1,66 @@
+# Workflow: Get commits ready
+# Checks if the last commit contains '#ready' message
+#
+# Workflow Description:
+# This reusable workflow verifies the last commit message in a specified branch
+# looking for a '#ready' tag. It's typically used to automate processes that
+# should only run when code is marked as ready.
+#
+# Inputs:
+#   working-directory:
+#     - Optional working directory for workflow execution
+#     - Type: string
+#     - Default: "."
+#   branch:
+#     - Branch to check for ready commits
+#     - Type: string
+#     - Default: develop
+#
+# Outputs:
+#   ready:
+#     - Flag indicating if last commit contains '#ready'
+#     - Type: boolean
+name: Get commits ready
+on:
+  workflow_call:
+    inputs:
+      working-directory:
+        required: false
+        type: string
+        default: "."
+      branch:
+        required: false
+        type: string
+        default: develop
+    outputs:
+      ready:
+        description: "Flag indicating if the last commit contains message #ready"
+        value: ${{ jobs.status.outputs.ready }}
+
+jobs:
+  # Job: status
+  # Checks the last commit message in the specified branch
+  status:
+    name: Get status
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.READY }}
+    steps:
+      # Step: Checkout code
+      # Clones the repository with full history
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Step: Prepare branch
+      # - Checks if last commit contains '#ready' tag
+      # - Sets READY output variable to true/false based on result
+      - name: Prepare branch
+        id: check
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          if git log -1 main..${{ inputs.branch }} --pretty=%B | grep -iq '#ready'; then
+            echo "READY=true" >> $GITHUB_OUTPUT
+          else
+            echo "READY=false" >> $GITHUB_OUTPUT
+          fi

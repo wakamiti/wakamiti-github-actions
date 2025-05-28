@@ -14,29 +14,82 @@ on:
         required: false
         type: string
         default: "."
+      branch:
+        required: false
+        type: string
+        default: "develop"
+      changelog:
+        required: true
+        type: string
+      version:
+        required: true
+        type: string
+      revision:
+        required: true
+        type: boolean
+      type:
+        required: true
+        type: string
+    outputs:
+      head:
+        description: "The release source branch"
+        value: ${{ jobs.release.outputs.head }}
+      title:
+        description: "The release title"
+        value: ${{ jobs.release.outputs.title }}
+      body:
+        description: "The release body"
+        value: ${{ jobs.release.outputs.body }}
 
 jobs:
   release:
     name: Create release
     runs-on: ubuntu-latest
+    env:
+      CHANGELOG: ${{ inputs.changelog }}
+      VERSION: ${{ inputs.version }}
+      REVISION: ${{ inputs.revision }}
+    outputs:
+      head: ${{ steps.pr-info.outputs.HEAD }}
+      title: ${{ steps.pr-info.outputs.TITLE }}
+      body: ${{ steps.pr-info.outputs.BODY }}
     steps:
       # Step: Checkout code
-      # - Clones the repository
-      - uses: actions/checkout@v4
+      # - Checks out the repository code.
+      # - Fetch-depth is set to 0 to ensure the full history is available for analysis.
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: git checkout ${{ inputs.branch }}
 
-      # Step: Prepare branch
-      # - Checks out develop branch
-      # - Validates existence of CHANGELOG.md
-      - name: Prepare branch
-        working-directory: ${{ inputs.working-directory }}
-        run: |
-          git checkout develop
-          CHANGELOG=$(ls | grep -i "changelog.md")
-          if [ -z "$CHANGELOG" ]; then
-            echo "::error::CHANGELOG.md file does not exist."
-            exit 1
-          fi
-          echo "CHANGELOG=$CHANGELOG" >> $GITHUB_ENV
+        # Step: Set up JDK
+      # - Sets up Java Development Kit (JDK) version 17 using the Temurin distribution.
+      # - Caches Maven dependencies for faster builds.
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: maven
+          overwrite-settings: 'false'
+
+      # Step: Cache Maven settings
+      # - Caches Maven settings file to avoid re-downloading it.
+      - name: Cache Maven settings
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/settings.xml
+          key: settings-xml
+
+      # Step: Cache Maven packages
+      # - Caches Maven dependencies to reduce build time.
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
 
       # Step: Check version
       # - Validates changelog format and version requirements
@@ -45,25 +98,20 @@ jobs:
       - name: Check version
         working-directory: ${{ inputs.working-directory }}
         run: |
-          if [ ! -f "${{ env.CHANGELOG }}" ]; then
-            echo "::error::${{ env.CHANGELOG }} file does not exist."
-            exit 1
-          fi
           if ! grep -iq "\[unreleased\]" ${{ env.CHANGELOG }}; then 
             echo "::error::${{ env.CHANGELOG }} must contain an [unreleased] block."
             exit 1
           fi
-          snapshot=$(mvn -q help:evaluate -Dexpression=project.version -DforceStdout)
-          if [[ ! $snapshot =~ -SNAPSHOT$ ]]; then
-            echo "::error::Current version $snapshot is not a snapshot."
+          if [[ ! ${{ env.VERSION }} =~ -SNAPSHOT$ ]]; then
+            echo "::error::Current version ${VERSION} is not a snapshot."
             exit 1
           fi
-          version=$(echo "$snapshot" | sed 's/-SNAPSHOT//')
-          if grep -iq "\[$version\]" ${{ env.CHANGELOG }}; then
-            echo "::error::Current version $version already exists in ${{ env.CHANGELOG }}."
+          new_version=$(echo "${{ env.VERSION }}" | sed 's/-SNAPSHOT//')
+          if grep -iq "\[$new_version\]" ${{ env.CHANGELOG }}; then
+            echo "::error::Current version $new_version already exists in ${{ env.CHANGELOG }}."
             exit 1
           fi
-          echo "VERSION=$version" >> $GITHUB_ENV
+          echo "NEW_VERSION=$new_version" >> $GITHUB_ENV
 
       # Step: Initialize git config
       # - Creates new 'release' branch from 'develop'
@@ -72,7 +120,7 @@ jobs:
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email noreply@github.com
-          git checkout -b release/v${{ env.VERSION }} develop
+          git checkout -b ${{ inputs.type }}/v${{ env.NEW_VERSION }} ${{ inputs.branch }}
 
       # Step: Change version
       # - Updates version in pom.xml (supports revision property)
@@ -82,14 +130,13 @@ jobs:
         id: change-version
         working-directory: ${{ inputs.working-directory }}
         run: |
-          snapshot=$(mvn -q help:evaluate -Dexpression=project.version -DforceStdout)
-          if [[ $snapshot == $(mvn -q help:evaluate -Dexpression=revision -DforceStdout) ]]; then
-            mvn versions:set-property -Dproperty=revision -DnewVersion=${{ env.VERSION }} -DgenerateBackupPoms=false
+          if [[ ${REVISION} == 'true' ]]; then
+            mvn versions:set-property -Dproperty=revision -DnewVersion=${{ env.NEW_VERSION }} -DgenerateBackupPoms=false
           else
-            mvn versions:set -DnewVersion=${{ env.VERSION }} -DgenerateBackupPoms=false
+            mvn versions:set -DnewVersion=${{ env.NEW_VERSION }} -DgenerateBackupPoms=false
           fi
           body=$(sed -n '/^## \[unreleased\]/,/^## \[/p' ${{ env.CHANGELOG }} | sed '/^## \[/d' | sed ':a;N;$!ba;s/\n/\\n/g')
-          sed -i "s/\[unreleased\]/[${{ env.VERSION }}] - $(date +%F)/" ${{ env.CHANGELOG }}
+          sed -i "s/\[unreleased\]/[${{ env.NEW_VERSION }}] - $(date +%F)/" ${{ env.CHANGELOG }}
           echo "PR_BODY=$body" >> $GITHUB_ENV
 
       # Step: Commit and push
@@ -99,35 +146,24 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
         run: |
           git add .
-          git commit --message "Prepare release ${{ env.VERSION }}"
-          git push origin release/v${{ env.VERSION }}
+          git commit --message "Prepare ${{ inputs.type }} ${{ env.NEW_VERSION }}"
+          git push origin ${{ inputs.type }}/v${{ env.NEW_VERSION }}
 
-      # Step: Get reviewers
-      # - Fetches list of team reviewers from GitHub API
-      - name: Get reviewers
-        id: get-reviewers
-        shell: bash
-        env:
-          ORG: ${{ github.repository_owner }}
-          TEAM: 'reviewers'
-          GH_TOKEN:  ${{ secrets.API_TOKEN }}
-        run: echo data=$(gh api /orgs/$ORG/teams/$TEAM/members | jq -r 'map(.login)') >> "$GITHUB_OUTPUT"
-
-      # Step: Create pull request
-      # - Creates PR from release branch to main
-      # - Adds changelog content to PR body
-      # - Assigns team reviewers
-      - name: create pull request
-        shell: bash
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
+      - name: Pull Request info
+        id: pr-info
         run: |
-          PR=$(gh api -X POST /repos/$REPO/pulls \
-            -F base='main' \
-            -F head="release/v${{ env.VERSION }}" \
-            -F title="Release version v${{ env.VERSION }}" \
-            -F body="${{ env.PR_BODY }}" \
-            --jq '.id')
-          echo '{ "reviewers":${{ steps.get-reviewers.outputs.data }} }' | \
-          gh api -X POST /repos/$REPO/pulls/$PR/requested_reviewers --input -
+          echo "HEAD=${{ inputs.type }}/v${{ env.NEW_VERSION }}" >> $GITHUB_OUTPUT
+          echo "TITLE=New version v${{ env.NEW_VERSION }}" >> $GITHUB_OUTPUT
+          echo "BODY=${{ env.PR_BODY }}" >> $GITHUB_OUTPUT
+
+      - name: Rollback changes
+        if: failure()
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          if git show-ref --quiet refs/heads/${{ inputs.type }}/v${{ env.NEW_VERSION }}; then
+            git checkout ${{ inputs.branch }}
+            git branch -D ${{ inputs.type }}/v${{ env.NEW_VERSION }}
+            git push origin --delete ${{ inputs.type }}/v${{ env.NEW_VERSION }} || true
+          fi
+
+

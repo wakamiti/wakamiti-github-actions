@@ -28,7 +28,7 @@ jobs:
       # - Generates Maven settings if not found in cache
       # - Configures:
       #   * GitHub authentication credentials
-      #   * Repository settings for snapshots and releases
+      #   * Repository settings for snapshots
       #   * Plugin repository configuration
       #   * Wakamiti profile activation
       - name: Create settings.xml
