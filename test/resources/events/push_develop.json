@@ -1,4 +1,7 @@
 {
+  "repository": {
+    "name": "tester/repository2"
+  },
   "ref": "refs/heads/develop",
   "head_commit": { "id": "abc123" }
 }

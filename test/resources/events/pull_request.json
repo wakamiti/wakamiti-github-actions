@@ -1,0 +1,13 @@
+{
+  "repository": {
+    "name": "tester/repository1"
+  },
+  "pull_request": {
+    "head": {
+      "ref": "feat/something"
+    },
+    "base": {
+      "ref": "develop"
+    }
+  }
+}
