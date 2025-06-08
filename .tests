@@ -1,5 +1,0 @@
-#evento carpeta json workflow
-pull_request snapshot pull_request
-push snapshot push_develop snapshot
-push release push_develop snapshot
-workflow_dispatch snapshot workflow_dispatch release
