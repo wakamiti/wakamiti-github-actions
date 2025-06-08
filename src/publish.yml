@@ -1,0 +1,29 @@
+name: Publish release
+on:
+  pull_request:
+    branches: [ main ]
+    types: [ closed ]
+
+jobs:
+  verify:
+    if: github.event.pull_request.merged == true &&
+      (startsWith(github.event.pull_request.head.ref, 'release/')
+      || startsWith(github.event.pull_request.head.ref, 'hotfix/'))
+
+  config:
+    name: Maven Configuration
+    uses: wakamiti/wakamiti-github-actions/.github/workflows/maven.yml@main
+    needs: verify
+    secrets: inherit
+
+  validate:
+    name: Validate Code
+    uses: wakamiti/wakamiti-github-actions/.github/workflows/validate_code.yml@main
+    needs: [verify, config]
+    secrets: inherit
+
+  deploy:
+    name: Deploy Release
+    uses: wakamiti/wakamiti-github-actions/.github/workflows/deploy.yml@main
+    needs: [verify, config, validate]
+    secrets: inherit

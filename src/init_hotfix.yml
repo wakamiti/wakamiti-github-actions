@@ -1,14 +1,17 @@
-name: Create Release Branch
+name: Init hotfix
 on:
   workflow_dispatch:
 
 jobs:
+
   config:
     name: Maven Configuration
     uses: wakamiti/wakamiti-github-actions/.github/workflows/maven.yml@main
     secrets: inherit
 
-  release:
-    uses: wakamiti/wakamiti-github-actions/.github/workflows/release.yml@main
-    needs: config
+  status:
+    uses: wakamiti/wakamiti-github-actions/.github/workflows/status.yml@main
     secrets: inherit
+    needs: config
+
+

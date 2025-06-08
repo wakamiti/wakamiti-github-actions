@@ -1,0 +1,36 @@
+name: Create Release Branch
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+
+jobs:
+  config:
+    name: Maven Configuration
+    uses: wakamiti/wakamiti-github-actions/.github/workflows/maven.yml@main
+    secrets: inherit
+
+  status:
+    uses: wakamiti/wakamiti-github-actions/.github/workflows/status.yml@main
+    secrets: inherit
+    needs: config
+
+  release:
+    uses: wakamiti/wakamiti-github-actions/.github/workflows/release.yml@main
+    secrets: inherit
+    needs: [config, status]
+    with:
+      changelog: ${{ needs.status.outputs.changelog }}
+      version: ${{ needs.status.outputs.version }}
+      revision: ${{ needs.status.outputs.revision }}
+      type: "release"
+
+  pr:
+    name: Pull Request
+    uses: wakamiti/wakamiti-github-actions/.github/workflows/create_pr.yml@main
+    secrets: inherit
+    needs: release
+    with:
+      head: ${{ needs.release.outputs.head }}
+      title: ${{ needs.release.outputs.title }}
+      body: ${{ needs.release.outputs.body }}
