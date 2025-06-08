@@ -1,0 +1,27 @@
+#!/bin/bash
+set -e
+
+event="workflow_dispatch"
+workdir="snapshot"
+data="workflow_dispatch.json"
+workflow="release"
+
+# --------------------------
+
+setup() {
+  :
+}
+
+teardown() {
+  :
+}
+
+# --------------------------
+
+id=$(basename "$0")
+id=${id#Test_}
+
+/docker/prepare $workdir $id $workflow
+setup
+act -vv ${event} -C /target/$id -e /test/resources/events/${data} -W /workflows/${workflow}.yml
+teardown
