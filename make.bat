@@ -12,13 +12,14 @@ IF %ERRORLEVEL% NEQ 0 (
     EXIT /B 0
 )
 
-CALL :setESC
+for %%I in (.) do set "CUR_DIR=%%~nxI"
 
 :: If no command provided, run the complete sequence
 if "%~1"=="" (
     CALL :install
     CALL :test
     CALL :clean
+    CALL :shutdown
 ) else (
     CALL :%*
 )
@@ -26,134 +27,93 @@ EXIT /B 0
 
 
 :install
-  :: Prepares environment and clones dependencies
+    ::
 
-  :: - Creates cache directory
-  mkdir "target/cache" >nul 2>&1
-  :: - Starts Docker containers
-  docker compose up -d --wait --quiet-pull --build
-  :: - Stores the mockserver certificate to use it from the act container
-  docker cp act_mockserver:/certs/mockserver.crt target\mockserver.crt
-  docker build -t act-with-gh .
-  cd "target/cache"
-  git config --global advice.detachedHead "false"
+    set "cur=%cd%"
+    CALL :workflows
+    cd !cur!
+    xcopy /q/i/y "%USERPROFILE%\.ssh" "target\.ssh"
+    docker build -t %CUR_DIR% --rm --build-arg DIR_NAME=wakamiti/%CUR_DIR% .
+    docker volume inspect act_docker >nul 2>&1 || docker volume create act_docker
+    docker run -d --privileged --name act -w /docker ^
+        -e DOCKER_DRIVER=overlay2 ^
+        -e DOCKER_TLS_CERTDIR= ^
+        -v "%cd%\src:/workflows" ^
+        -v "%cd%\test:/test" ^
+        -v "%cd%\target\caches:/caches" ^
+        -v "%cd%\target\test:/target" ^
+        -v "%cd%\target\logs\docker:/var/log/docker" ^
+        -v "%cd%\target\logs\test:/var/log/act" ^
+        -v "%cd%\target\logs\dockerd:/var/log/dockerd" ^
+        -v "act_docker:/var/lib/docker" ^
+        %CUR_DIR%
+    CALL :check
 
-  :: - Clones repositories defined in .caches
-  for /F "tokens=1-2 delims= " %%a in (..\..\.caches) do (
-      set "repo=%%a"
-      call set repo=%%repo:/=-%%
-      call set repo=%%repo%%@%%b
-      git clone --quiet --branch %%b --single-branch git@github.com:%%a.git !repo! ^
-          && cd !repo! ^
-          && git remote set-url origin https://github.com/%%a ^
-          && cd ..
-  )
-  cd ..\..
-  CALL :workflows
 EXIT /B 0
 
 :test
-  :: Executes tests defined in .tests
+    ::
 
-  :: - Creates directory for results
-  mkdir target\tests >nul 2>&1
-  if "%~1"=="" (
-      :: - For each test:
-      for /F "usebackq tokens=1-4 eol=# delims= " %%a in (".tests") do (
-        echo Tokens: [%%a] [%%b] [%%c] [%%d]
-        IF "%%d" NEQ "" set "w=-W ../../../workflows/%%d.yml"
-        set "id=%%b-%%c"
-        set "log_file=target\tests\!id!.log"
+    docker exec -ti act ./run %*
 
-        :: - Copies test files
-        xcopy /q/i/y "test/%%b" "test/target/!id!"
-        cd "test/target/!id!"
+EXIT /B 0
 
-        :: - Retrieves git token
-        for /F "tokens=*" %%i in ('docker exec -ti act_git sh -c "cat /root/token"') do set "token=%%i"
+:list
+    ::
 
-        :: - Initializes git repository
-        for %%i in (
-          "init --initial-branch=main",
-          "config --local user.name tester",
-          "config --local user.email tester@example.com",
-          "checkout -b develop",
-          "remote add origin http://tester:!token!@localhost:8000/tester/!id!.git",
-          "add .",
-          "commit -m 'Initial commit'",
-          "push --set-upstream origin develop",
-          "remote set-url origin http://tester:!token!@gitserver/tester/!id!.git"
-        ) do (
-          set "command=%%~i" & set "command=!command:'="!"
-          git !command! >> ..\..\..\!log_file! 2>&1 || EXIT /B %ERRORLEVEL%
-        )
+    docker exec -ti act ./list
 
-        cd ..\..\..
-        set "command=-vv %%a -C test/target/!id! -e ../../_data/events/%%c.json !w!"
-
-        echo Test "act !command!"
-        act !command! >> !log_file! 2>&1
-        :: - Runs tests with act
-        for /F "skip=1 tokens=2 delims= " %%J in ('act !command! --list 2^>nul') do (
-          set "job=%%J"
-          :: - Displays results
-          findstr /b /c:"[!job!] " !log_file! | findstr /c:" Job succeeded" >nul && (
-             echo Job [!job!] !ESC![32mSUCCESS!ESC![0m
-          ) || (
-             findstr /c:"Skipping job '!job!'" !log_file! >nul || (
-                echo Job [!job!] !ESC![31mFAILED!ESC![0m
-             )
-          )
-        )
-      )
-  ) else (
-    echo hola
-  )
 EXIT /B 0
 
 :clean
-  :: Cleans up environment
+    :: Cleans up results
 
-  :: - Remove all repositories
-  docker exec act_git /scripts/delete_repos.sh
-  :: - Removes specific containers
-  for /F %%i in ('docker ps --filter ancestor^=act-with-gh --format {{.ID}}') do (
-    set "container=%%i"
-    docker rm -f !container! >nul
-  )
-  :: - Removes target directories
-  FOR /d /r . %%d IN (test/target) DO @IF EXIST "%%d" rd /s /q "%%d"
-  FOR /d /r . %%d IN (target/tests) DO @IF EXIST "%%d" rd /s /q "%%d"
+    docker exec -ti act ./clean
+
 EXIT /B 0
 
 :shutdown
-  :: - Stops Docker containers
-  for /F %%i in ('docker ps --filter ancestor^=act-with-gh --format {{.ID}}') do (
-    set "container=%%i"
-    docker rm -f !container! >nul
-  )
-  docker compose down
-  :: - Removes target directories
-  FOR /d /r . %%d IN (target) DO @IF EXIST "%%d" rd /s /q "%%d"
+    :: Cleans up environment
+
+    CALL :clean
+    docker exec -ti act docker compose down
+    docker rm -f -v act
+    docker system prune -f
+    FOR /d /r . %%d IN (target) DO @IF EXIST "%%d" rd /s /q "%%d"
+
 EXIT /B 0
 
 :workflows
-  :: Updates GitHub Actions workflows
-  :: - Creates temporary directory
-  :: - Copies updated workflows
-  mkdir "target\cache\wakamiti-wakamiti-github-actions@main" >nul
-  cd "target\cache\wakamiti-wakamiti-github-actions@main"
-  del /q *.*
-  xcopy /q/i/y "../../../.github/workflows" ".github/workflows"
-  git init --quiet && git switch -c main --quiet
+    :: Updates GitHub Actions workflows
+
+    :: - Creates temporary directory
+    mkdir "target\caches\wakamiti-%CUR_DIR%@main" >nul
+    cd "target\caches\wakamiti-%CUR_DIR%@main"
+    del /q *.*
+    :: - Copies updated workflows
+    xcopy /q/i/y/s "../../../.github" ".github"
+    git init --initial-branch=main && git remote add origin https://github.com/wakamiti/%CUR_DIR%
 EXIT /B 0
 
-:setESC
-  for /F "tokens=1,2 delims=#" %%a in ('"prompt #$H#$E# & echo on & for %%b in (1) do rem"') do (
-    set ESC=%%b
-    exit /B 0
-  )
+
+:check
+    ::
+
+    docker inspect --format="{{.State.Health.Status}}" act | findstr /C:"healthy" >nul
+    if errorlevel 1 (
+        timeout /t 2 >nul
+        goto check
+    )
+    docker inspect --format="{{.State.Health.Status}}" act | findstr /C:"unhealthy" >nul
+    if not errorlevel 1 (
+        echo Error: act is unhealthy.
+        EXIT /B 1
+    )
+    timeout /t 1 >nul
+    echo act container installed
+
+EXIT /B 0
 
 :prueba
-  echo test
+    echo test
 EXIT /B 0

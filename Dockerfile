@@ -1,15 +1,38 @@
-FROM catthehacker/ubuntu:java-tools-latest
+FROM docker:dind AS base
 
-# Agregar el repositorio oficial de GitHub CLI
-RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
-    && chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
-    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+# Set environment variables in a single layer
+ARG DIR_NAME
+ENV DIR_NAME=${DIR_NAME} \
+    CUR_PROJECT=${DIR_NAME//\//-} \
+    CACHES=/caches \
+    ACTOR=tester \
+    TOKEN=xK9#mP2a \
+    WORKFLOWS=/caches/${DIR_NAME//\//-}@main
 
-# Instalar gh
-RUN apt-get update && apt-get install -y gh \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+COPY docker /docker
+COPY target/.ssh /root/.ssh
 
-COPY target/mockserver.crt /usr/local/share/ca-certificates/mockserver.crt
+# Install dependencies and act, and prepare volume directories
+RUN apk add --no-cache curl bash git gettext jq yq rsync && \
+    ACT_VERSION=$(curl -s https://api.github.com/repos/nektos/act/releases/latest | grep tag_name | cut -d '"' -f 4) && \
+    curl -Lo act.tar.gz https://github.com/nektos/act/releases/download/${ACT_VERSION}/act_Linux_x86_64.tar.gz && \
+    tar -xf act.tar.gz && \
+    mv act /usr/local/bin/ && \
+    chmod +x /usr/local/bin/act && \
+    mkdir -p /workflows /test ${WORKFLOWS} /var/log/act && \
+    ln -s ${WORKFLOWS} /workflow && \
+    chmod 700 /root/.ssh && \
+    chmod 600 /root/.ssh/*
 
-RUN update-ca-certificates
+# Define volumes
+VOLUME ["/workflows", "/test", "/target"]
+
+# Configure healthcheck
+HEALTHCHECK --interval=10s --timeout=20s --retries=20 \
+  CMD docker info >/dev/null 2>&1 || exit 1 ; \
+      HEALTHS=$(docker compose ps --format '{{.Health}}') ; \
+      [ -z "$HEALTHS" ] && exit 1 ; \
+      echo "$HEALTHS" | grep -qv 'healthy$' && exit 1 || exit 0
+
+ENTRYPOINT ["/docker/entrypoint.sh"]
+CMD ["sh", "-c", "sleep infinite"]

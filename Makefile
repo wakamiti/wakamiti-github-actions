@@ -23,9 +23,10 @@ test:
 		id=$$id-$$event; \
 		cp -r test/$$id test/target/$$id; \
 		log_file=target/tests/$$id.log; \
-		echo "Test act $$command -C test/target/$$id -e ../../_data/events/$$event.json $$w"; \
-		act $$command -C test/target/$$id -e ../../_data/events/$$event.json $$w > $$log_file 2>&1; \
-		for job in $$(act $$command -C test/target/$$id -e ../../_data/events/$$event.json $$w --list | tail -n +2 | awk '{print $$2}'); do \
+		echo "Test act $$command -C test/target/$$id -e ../../resources/events/$$event.json $$w"; \
+		act $$command -C test/target/$$id -e ../../resources/events/$$event.json $$w > $$log_file 2>&1; \
+		for job in $$(act $$command -C test/target/$$id -e ../../resources/events/$$event.json $$w --list | tail -n
+		+2 | awk '{print $$2}'); do \
 			if grep -q "[$$job] Job succeeded" $$log_file; then \
 				echo "Job [$$job] SUCCESS"; \
 			else \

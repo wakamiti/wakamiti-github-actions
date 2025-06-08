@@ -74,3 +74,139 @@ la depuración y validación.
   make workflows
   ```
 
+## Workflows
+
+1. **Validar Pull Request**
+   
+   Al crear una pull request se compila el código, se ejecutan tests y se analiza en SonarQube (si contiene código). Si, 
+   además, la rama de destino es `main` y la pull request proviene de una rama `release` o `hotfix` se validarán los 
+   elementos necesarios para hacer la release (fichero changelog, que la versión no exista, que no contenga 
+   dependencias snapshot, ...).
+    ```mermaid
+    flowchart LR
+        PR1(("pull_request"))
+        subgraph SUB1 [ ]
+            direction TB
+            V1["Configurar maven *"]
+            V2["Compilar código *"]
+            V3["Ejecutar tests"]
+            V4["Análisis SonarQube"]
+            V5{"Si 
+                destino 'main' y 
+                origen 'release' 
+                o 'hotfix'"}
+            V6["Validar nueva versión"]
+        end
+        
+        PR1 -- opened
+               synchronize
+               reopened --> SUB1
+        V1 --> V2 --> V3 --> V4 --> V5 --> V6
+    ```
+   
+2. **Crear Snapshot**
+
+   Al hacer push a la rama `develop` se compila el código, se ejecutan tests, se valida la versión snapshot, se 
+   elimina el snapshot antiguo si existe y se despliega la nueva snapshot.
+    ```mermaid
+    flowchart LR
+        D1(("push"))
+        subgraph SUB1 [ ]
+            direction TB
+            S1["Configurar maven *"]
+            S2["Compilar código *"]
+            S3["Ejecutar tests"]
+            S4["Validar Snapshot"]
+            S5["Eliminar Snapshot antiguo"]
+            S6["Desplegar Snapshot"]
+        end
+        
+        D1 -- develop --> SUB1
+        S1 --> S2 --> S3 --> S4 --> S5 --> S6
+    ```
+   
+3. **Preparar release**
+
+   Al hacer push a la rama `develop`, si el último commit contiene `#ready` o mediante ejecución manual, se valida 
+   la versión y se crea la correspondiente rama `release` a partir del código de `develop`.
+    ```mermaid
+    flowchart LR
+        D1(("push"))
+        D2(("workflow_dispatch"))
+        subgraph SUB1 [ ]
+            direction TB
+            S1["Configurar maven *"]
+            S2["Validar versión"]
+            S3["Crear rama release"]
+        end
+    
+        D1 -- develop 
+              (commit #ready) --> SUB1
+        D2 --> SUB1
+        S1 --> S2 --> S3 
+    ```
+   
+4. **Crear Pull Request**
+
+   Al hacer push a una rama `release` o `hotfix`, si el último commit contiene `#ready` o mediante ejecución manual, 
+   se prepara la nueva versión y se crea un pull request a `main`.
+    ```mermaid
+    flowchart LR
+        D1(("push"))
+        D2(("workflow_dispatch"))
+        subgraph SUB1 [ ]
+            direction TB
+            S1["Configurar maven *"]
+            S2["Preparar versión"]
+            S3["Crear pull request"]
+        end
+    
+        D1 -- release
+              hotfix
+              (commit #ready) --> SUB1
+        D2 --> SUB1
+        S1 --> S2 --> S3 
+    ```
+   
+5. **Publicar Release**
+
+   Tras fusionar un pull request de `release` o `hotfix` a `main`, despliega la versión final y crea un nuevo pull request 
+   si es necesario.
+    ```mermaid
+    flowchart LR
+        D1(("pull_request"))
+        D2{"Si 
+            destino 'main' y
+            origen 'release'
+            o 'hotfix'"}
+        subgraph SUB1 [ ]
+            direction TB
+            S1["Configurar maven *"]
+            S2["Desplegar Release"]
+            S3["Crear nueva Release"]
+        end
+    
+        D1 -- closed
+              merged --> D2 --> SUB1
+        S1 --> S2 --> S3 
+    ```
+   
+6. **Iniciar Hotfix**
+
+   Permite iniciar un `hotfix` manualmente, validando y preparando la versión, y creando la rama de `hotfix` 
+   correspondiente.
+    ```mermaid
+    flowchart LR
+        D1(("workflow_dispatch"))
+        subgraph SUB1 [ ]
+            direction TB
+            S1["Validar versión"]
+            S2["Preparar versión"]
+            S3["Crear rama hotfix"]
+        end
+        
+        D1 --> SUB1
+        S1 --> S2 --> S3
+    ```
+
+(*): cacheable
