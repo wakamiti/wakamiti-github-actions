@@ -5,29 +5,31 @@ const mergeFiles = require('merge-files');
 const fs = require('fs-extra');
 const path = require('path');
 const crypto = require('crypto');
+
 const server = express();
 const PORT = process.env.PORT || 8080;
+const db = new sqlite3('/usr/local/etc/cache.db');
 
 const CACHE_PATH = '/usr/src/app/.caches';
 const PART_PREFIX = '/tmp/.cache_';
+
 const PART_EXT = '.part';
 const PART_META_EXT = '.meta';
 
 // DB Setup
-const db = new sqlite3('/usr/local/etc/cache.db');
 try {
-    db.prepare("" +
-        "CREATE TABLE caches (" +
-        "id INTEGER PRIMARY KEY, " +
-        "key TEXT NOT NULL, " +
-        "version TEXT NOT NULL, " +
-        "started INTEGER DEFAULT (0) NOT NULL, " +
-        "complete INTEGER DEFAULT (0) NOT NULL)"
-    ).run();
+    db.prepare(`
+        CREATE TABLE caches (
+            id INTEGER PRIMARY KEY,
+            key TEXT NOT NULL, 
+            version TEXT NOT NULL,
+            started INTEGER DEFAULT (0) NOT NULL,
+            complete INTEGER DEFAULT (0) NOT NULL
+        )
+    `).run();
     db.prepare("CREATE INDEX idx_key ON caches (key)");
     db.prepare("CREATE UNIQUE INDEX idx_key ON caches (key, version)");
-} catch {
-}
+} catch {}
 
 const unless = (re_paths, middleware) => {
     return function(req, res, next) {

@@ -1,0 +1,80 @@
+#!/bin/bash
+set -e
+
+if ! docker info >/dev/null 2>&1; then
+  echo "Error: Docker is not running." >&2
+  exit 1
+fi
+
+# Function to run a single test
+run_test() {
+  local test_file=$1
+  local id=${test_file#Test_}
+  local logfile="/var/log/act/$id.log"
+
+  # Create log directory if it doesn't exist
+  mkdir -p /var/log/act
+
+  # Print test header
+  chars=$(( 60 - ${#id} ))
+  echo -n "-- Test $id "
+  printf -- '-%.0s' $(seq 1 $chars)
+  echo
+
+  # Run the test and measure execution time
+  start_time=$(date +%s.%N)
+  {
+    echo "[$(date)] Init test $id"
+    ./Test_${id} || true
+    echo "[$(date)] Finish test $id"
+  } > $logfile 2>&1 &
+
+  # Process test results in parallel
+  timeout 30 bash -c "while [ ! -f "/target/.$id" ]; do sleep 1; done"
+
+  if [ -f "/target/.$id" ]; then
+    # Extract job names and process them in parallel
+    cat /target/.$id | awk 'NR>1 {print $2}' | while read job; do
+      {
+        while kill -0 $! 2>/dev/null; do
+            if grep -q "\[$job\] .*Job succeeded" "$logfile"; then
+              echo -e "Job [$job] \033[32mSUCCESS\033[0m"
+              break
+            fi
+            sleep 1
+        done
+      } &
+    done
+    wait
+    sleep 1
+
+    cat /target/.$id | awk 'NR>1 {print $2}' | while read job; do
+      if ! grep -q "\[$job\] .*Skipping job\|.*Job succeeded" "$logfile"; then
+        echo -e "Job [$job] \033[31mFAILED\033[0m"
+      fi
+    done
+
+    end_time=$(date +%s.%N)
+    elapsed_seconds=$(awk "BEGIN {print $end_time - $start_time}")
+  else
+    echo "Warning: No job information found for test $id"
+  fi
+
+  echo "Duration: $elapsed_seconds sec"
+
+  # Clean up after the test
+  echo "Cleaning up after test $id..."
+  /docker/clean >/dev/null 2>&1
+
+  # Return success
+  return 0
+}
+
+# Main execution
+cd /test/scripts
+tests=( ${@:-Test_*} )
+
+# Run tests
+for test_file in ${tests[@]}; do
+  run_test $test_file
+done

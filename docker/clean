@@ -1,0 +1,8 @@
+#!/bin/bash
+
+until docker info >/dev/null 2>&1; do sleep 1; done
+
+docker exec -ti act_git /workspace/delete_repos.sh
+rm -rf /target/$id/.git
+containers=$(docker ps --filter ancestor=act-with-gh --format {{.ID}})
+[ -n "$containers" ] && docker rm -f $containers

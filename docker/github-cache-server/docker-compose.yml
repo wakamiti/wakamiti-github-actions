@@ -10,7 +10,6 @@ services:
     volumes:
       - github-act-cache-server-cache:/usr/src/app/.caches
       - github-act-cache-server-db:/usr/local/etc/
-      #- ./src:/usr/src/app/src # development
 volumes:
   github-act-cache-server-cache:
   github-act-cache-server-db:

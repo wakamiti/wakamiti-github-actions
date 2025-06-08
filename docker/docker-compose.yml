@@ -1,0 +1,104 @@
+services:
+
+  github-cache-server:
+    build:
+      context: github-cache-server
+      tags: ["act/github-cache-server"]
+      args:
+        - AUTH_KEY=password
+    environment:
+      ADMIN_USERNAME: ${ACTOR}
+    container_name: act_server
+    volumes:
+      - "/root/.actcache:/usr/src/app/.caches"
+    healthcheck:
+      test: [ "CMD", "true" ]
+      interval: 10s
+      timeout: 20s
+      retries: 20
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    restart: unless-stopped
+
+  nexus:
+    image: sonatype/nexus3:3.49.0
+    container_name: act_nexus
+    environment:
+      INSTALL4J_ADD_VM_PARAMS: "-Xms512m -Xmx512m -XX:MaxDirectMemorySize=512m"
+      NEXUS_SECURITY_RANDOMPASSWORD: "false"
+      USERNAME: ${ACTOR}
+      PASSWORD: ${TOKEN}
+    command: /workspace/init.sh
+    volumes:
+      - ./nexus/data:/workspace
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/service/rest/v1/status"]
+      interval: 10s
+      timeout: 20s
+      retries: 20
+    restart: unless-stopped
+
+  gitserver:
+    # doc: https://docs.gitea.com/installation/install-with-docker
+    image: gitea/gitea
+    container_name: act_git
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+      - GITEA__security__INSTALL_LOCK=true
+      - GITEA__server__ROOT_URL=http://localhost:3000
+      - GITEA__repository__ENABLE_PUSH_CREATE_USER=true
+      - GITEA__repository__ENABLE_PUSH_CREATE_ORG=true
+      - USERNAME=${ACTOR}
+      - PASSWORD=${TOKEN}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./gitserver/data:/workspace
+    command: /workspace/init.sh
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:3000/api/healthz" ]
+      interval: 10s
+      timeout: 20s
+      retries: 20
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+    restart: unless-stopped
+
+  mockserver:
+    build:
+      context: mockserver
+      tags: ["act/mockserver"]
+    container_name: act_mockserver
+    command: >
+      --disable-http
+      --https-port 8443
+      --https-keystore /certs/mockserver.jks
+    volumes:
+      - /test/resources/wiremock:/home/wiremock
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    restart: unless-stopped
+
+networks:
+  default:
+    name: act-test-network
+    driver: bridge

@@ -1,0 +1,63 @@
+#!/bin/bash
+set -e
+
+# Start time measurement
+start_time=$(date +%s.%N)
+
+# Set variables
+workdir="/test/resources/workdirs/$1"
+id="$2"
+workflow="$3"
+targetdir=/target/$id
+
+echo "Preparing test environment for $id with workflow $workflow..."
+
+# Clean and create target directory
+[ -d "$targetdir" ] && rm -rf "$targetdir"
+mkdir -p $targetdir
+
+# Use rsync instead of cp for better performance with large directories
+if command -v rsync >/dev/null 2>&1; then
+  echo "Copying workdir using rsync..."
+  rsync -a --delete $workdir/ $targetdir/
+else
+  echo "Copying workdir using cp..."
+  cp -dR $workdir/. $targetdir/
+fi
+
+cd $targetdir
+
+# Initialize git repository with optimized settings
+echo "Initializing git repository..."
+git init --initial-branch=main --quiet
+git config --global --add safe.directory $(pwd)
+git config --local core.compression 9
+git config --local pack.threads 4
+
+# Add remotes
+encoded_token=$(jq -rn --arg v "$TOKEN" '$v|@uri')
+git remote add local "http://${ACTOR}:${encoded_token}@localhost:3000/${ACTOR}/${id}.git"
+git remote add origin "http://${ACTOR}:${encoded_token}@gitserver:3000/${ACTOR}/${id}.git"
+
+# Create initial commit and branches
+echo "Creating initial commit and branches..."
+git add .
+git commit -m 'Initial commit' --quiet
+git push --set-upstream local main --quiet
+git checkout -b develop --quiet
+git push --set-upstream local develop --quiet
+
+# List available actions
+echo "Listing available actions..."
+act -vv -W /workflows/${workflow}.yml --list 2>/dev/null > /target/.$id
+
+# Apply patches in parallel if possible
+echo "Applying patches..."
+for script in /test/resources/patches/*; do
+  [ -x "$script" ] && "$script" > /dev/null 2>&1 || true
+done
+
+# Calculate and display elapsed time
+end_time=$(date +%s.%N)
+elapsed_seconds=$(awk "BEGIN {print $end_time - $start_time}")
+echo "Preparation completed in $elapsed_seconds seconds"

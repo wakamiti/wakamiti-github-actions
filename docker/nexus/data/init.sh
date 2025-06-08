@@ -3,24 +3,25 @@
 ./nexus/bin/nexus run &
 while ! curl -sSf http://localhost:8081/service/rest/v1/status > /dev/null; do sleep 10; done
 
-# Cambiar el nombre de usuario del administrador a 'tester'
 curl -u admin:admin123 -X POST 'http://localhost:8081/service/rest/v1/security/users' \
   -H 'Content-Type: application/json' \
-  -d '{
-    "userId": "tester",
-    "firstName": "Tester",
-    "lastName": "User",
-    "emailAddress": "tester@example.com",
-    "password": "xK9#mP2@",
-    "status": "active",
-    "roles": ["nx-admin"],
-    "source": "default"
-  }'
+  -d @- <<EOF
+     {
+       "userId": "${USERNAME}",
+       "firstName": "Tester",
+       "lastName": "User",
+       "emailAddress": "${USERNAME}@example.com",
+       "password": "${PASSWORD}",
+       "status": "active",
+       "roles": ["nx-admin"],
+       "source": "default"
+     }
+EOF
 
-# Crear repositorios
-curl -u tester:xK9#mP2@ -X POST 'http://localhost:8081/service/rest/v1/repositories/maven/hosted' \
+curl -u $USERNAME:$PASSWORD -X POST 'http://localhost:8081/service/rest/v1/repositories/maven/hosted' \
   -H 'Content-Type: application/json' \
-  -d '{
+  -d @- <<EOF
+  {
     "name": "maven-internal",
     "online": true,
     "storage": {
@@ -41,10 +42,13 @@ curl -u tester:xK9#mP2@ -X POST 'http://localhost:8081/service/rest/v1/repositor
       "layoutPolicy": "PERMISSIVE",
       "contentDisposition": "ATTACHMENT"
     }
-  }'
-curl -u tester:xK9#mP2@ -X POST 'http://localhost:8081/service/rest/v1/repositories/maven/hosted' \
+  }
+EOF
+
+curl -u $USERNAME:$PASSWORD -X POST 'http://localhost:8081/service/rest/v1/repositories/maven/hosted' \
   -H 'Content-Type: application/json' \
-  -d '{
+  -d @- <<EOF
+  {
     "name": "maven-snapshots",
     "snapshot": true,
     "online": true,
@@ -66,7 +70,8 @@ curl -u tester:xK9#mP2@ -X POST 'http://localhost:8081/service/rest/v1/repositor
       "layoutPolicy": "STRICT",
       "contentDisposition": "ATTACHMENT"
     }
-  }'
+  }
+EOF
 wait
 
 
