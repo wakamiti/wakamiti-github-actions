@@ -1,0 +1,95 @@
+name: Validate New Version
+on:
+  workflow_call:
+    inputs:
+      # Input: working-directory
+      # - Optional input specifying the working directory for the workflow.
+      # - Type: string
+      # - Default: "."
+      working-directory:
+        required: false
+        type: string
+        default: "."
+
+      ref:
+        required: true
+        type: string
+
+      # Input: changelog
+      # - The changelog file name
+      # - Type: string
+      changelog:
+        required: true
+        type: string
+
+      # Input: version
+      # - The current version
+      # - Type: string
+      version:
+        required: true
+        type: string
+
+jobs:
+  validate_version:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: ${{ github.head_ref }}-validate-version
+      cancel-in-progress: true
+    env:
+      GITHUB_ACTOR: ${{ github.actor }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      # Step: Checkout code
+      # - Clones the repository
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      # Step: Set up JDK
+      # - Sets up Java Development Kit (JDK) version 17 using the Temurin distribution.
+      # - Caches Maven dependencies for faster builds.
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: maven
+          overwrite-settings: 'false'
+
+      # Step: Cache Maven settings
+      # - Caches Maven settings file to avoid re-downloading it.
+      - name: Cache Maven settings
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/settings.xml
+          key: settings-xml
+
+      # Step: Cache Maven packages
+      # - Caches Maven dependencies to reduce build time.
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: maven-
+
+      # Step: Check version
+      - name: Check version
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          if grep -iq "\[unreleased\]" ${{ inputs.changelog }}; then 
+            echo "::error::${{ inputs.changelog }} must contain an [unreleased] block."
+            exit 1
+          fi
+          if [[ ${{ inputs.version }} =~ -SNAPSHOT$ ]]; then
+            echo "::error::Current version ${VERSION} is a snapshot."
+            exit 1
+          fi
+          if git tag | grep -q "^v${{ inputs.version }}$"; then
+            echo "::error::The tag v${{ inputs.version }} already exists."
+            exit 1
+          else
+            echo "El tag v${TAG} no existe."
+          fi
+          mvn verify -Prelease

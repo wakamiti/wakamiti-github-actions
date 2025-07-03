@@ -9,10 +9,7 @@ on:
       head:
         type: string
         required: true
-      title:
-        type: string
-        required: true
-      body:
+      changelog:
         type: string
         required: true
 
@@ -23,9 +20,19 @@ jobs:
     env:
       BASE: ${{ inputs.base }}
       HEAD: ${{ inputs.head }}
-      TITLE: ${{ inputs.title }}
-      PR_BODY: ${{ inputs.body }}
+      CHANGELOG: ${{ inputs.changelog }}
     steps:
+
+        - name: Recovery data
+          shell: bash
+          run: |
+            TYPE=$(echo "${{ env.HEAD }}" | grep -oP '^(release|hotfix)')
+            NEW_VERSION=$(echo "${{ env.HEAD }}" | grep -oP '(?<=v)\d+\.\d+\.\d+')
+            BODY=$(sed -n "/^## \[$NEW_VERSION\]/,/^## \[/p" ${{ env.CHANGELOG }} | \
+              sed '/^## \[/d' | sed ':a;N;$!ba;s/\n/\\n/g')
+            echo "TITLE=New version v$NEW_VERSION" >> $GITHUB_ENV
+            echo "BODY=$BODY" >> $GITHUB_ENV
+
 
         # Step: Create pull request
         # - Fetches list of team reviewers from GitHub API
@@ -45,7 +52,7 @@ jobs:
               -F base='${{ env.BASE }}' \
               -F head="${{ env.HEAD }}" \
               -F title="${{ env.TITLE }}" \
-              -F body="${{ env.PR_BODY }}" \
+              -F body="${{ env.BODY }}" \
               --jq '.id')
             data=$(gh api /orgs/$ORG/teams/$TEAM/members | jq -r 'map(.login)')
             echo '{ "reviewers":$data }' | gh api -X POST /repos/$REPO/pulls/$PR/requested_reviewers --input -

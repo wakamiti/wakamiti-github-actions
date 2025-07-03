@@ -6,11 +6,20 @@ on:
         required: false
         type: string
         default: "."
+      changelog:
+        required: true
+        type: string
+      version:
+        required: true
+        type: string
 
 jobs:
-  build:
+  deploy:
     name: Deploy
     runs-on: ubuntu-latest
+    env:
+      CHANGELOG: ${{ inputs.changelog }}
+      VERSION: ${{ inputs.version }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -18,33 +27,73 @@ jobs:
 
       - uses: actions/setup-java@v4
         with:
+          distribution: 'temurin'
           java-version: '17'
-          distribution: 'adopt'
-          cache: 'maven'
-          server-id: ossrh
+          cache: maven
+          server-id: central
           server-username: MAVEN_USERNAME
-          server-password: MAVEN_PASSWORD
+          server-password: MAVEN_CENTRAL_TOKEN
           gpg-private-key: ${{ secrets.GPG_SECRET_KEY }}
-          gpg-passphrase: ${{ secrets.GPG_SECRET_KEY_PASSWORD }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
 
-      - name: Check Release
-        working-directory: ${{ inputs.working-directory }}
-        run: |
-          version=$(mvn -q help:evaluate -Dexpression=project.version -DforceStdout)
-          if [[ $version == *-SNAPSHOT ]]; then
-            echo error: snapshot version $version deployment not allowed
-            exit 1
-          fi
-
+      # Step: Cache Maven packages
+      # - Caches Maven dependencies to reduce build time.
       - name: Cache Maven packages
         uses: actions/cache@v4
         with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
+          path: ~/.m2/repository
+          key: maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: maven-
+
+      # Step: Cache SonarCloud packages
+      # - Caches SonarCloud dependencies to speed up the analysis process.
+      - name: Cache SonarCloud packages
+        uses: actions/cache@v4
+        if: ${{ hashFiles('**/src/**') != '' }}
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
 
       - name: Build and Deploy
         working-directory: ${{ inputs.working-directory }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: mvn --batch-mode deploy -DskipTests
+          MAVEN_USERNAME: ${{ secrets.CENTRAL_USER }}
+          MAVEN_CENTRAL_TOKEN: ${{ secrets.CENTRAL_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_SECRET_KEY_PASSWORD }}
+        run: mvn deploy -DskipTests -Dmaven.server=central
+
+      - name: Recovery data
+        shell: bash
+        run: |
+          tag="v${{ env.VERSION }}"
+          prev_tag=$(git describe --tags --abbrev=0 || echo "")
+          body=$(sed -n "/^## \[${{ env.VERSION }}\]/,/^## \[/p" ${{ env.CHANGELOG }} | \
+            sed '/^## \[/d' | sed ':a;N;$!ba;s/\n/\\n/g')
+          if [ -n "$prev_tag" ]; then 
+            compare="https://github.com/${{ github.repository }}/compare/$prev_tag...$tag"
+            body="$body\\n\\n---\\n[Full Changelog]($compare)\\n"
+          fi
+          echo "TAG=$tag" >> $GITHUB_ENV
+          echo "BODY=$body" >> $GITHUB_ENV
+
+      - name: Create release
+        run: |
+          git tag ${{ env.TAG }}
+          git push origin ${{ env.TAG }}
+          upload_url=$(gh api repos/${{ github.repository }}/releases \
+            -X POST \
+            -f tag_name="${{ env.TAG }}" \
+            -f name="${{ env.VERSION }}" \
+            -f body="${{ env.BODY }}" \
+            -f draft=false \
+            -f prerelease=false \
+            --jq '.upload_url' | sed 's/{?name,label}//') || exit 1
+          shopt -s globstar
+          for file in target/central-staging/**/*.jar target/central-staging/**/*.pom; do
+            gh api "$upload_url?name=$(basename "$file")" \
+              -H "Content-Type: $(file --mime-type -b "$file")" \
+              --method POST \
+              --input "$file"
+          done

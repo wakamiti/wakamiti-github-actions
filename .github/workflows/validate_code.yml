@@ -14,6 +14,10 @@ on:
         type: string
         default: "."
 
+      extra_options:
+        required: false
+        type: string
+
       # Input: analyze
       # - Optional input to determine whether SonarQube analysis should be performed.
       # - Type: boolean
@@ -24,9 +28,12 @@ on:
         default: true
 
 jobs:
-  validate:
+  validate_code:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    concurrency:
+      group: ${{ github.head_ref }}-validate-code
+      cancel-in-progress: true
     env:
       GITHUB_ACTOR: ${{ github.actor }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -64,8 +71,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.m2/repository
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
+          key: maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: maven-
 
       # Step: Cache SonarCloud packages
       # - Caches SonarCloud dependencies to speed up the analysis process.
@@ -98,4 +105,5 @@ jobs:
           -Dsonar.host.url=$SONAR_HOST_URL \
           -Dsonar.organization=wakamiti \
           -Dsonar.projectKey=${{ github.event.repository.name }} \
+          ${{ inputs.extra_options }} \
           -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn

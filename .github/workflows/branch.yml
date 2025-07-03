@@ -1,0 +1,47 @@
+# Obtiene la rama según el tipo de rama
+name: Get branch
+on:
+  workflow_call:
+    inputs:
+      working-directory:
+        required: false
+        type: string
+        default: "."
+      type:
+        required: true
+        type: string
+    outputs:
+      branch:
+        description: "Flag indicating if the last commit contains message #ready"
+        value: ${{ jobs.branch.outputs.branch }}
+
+jobs:
+  # Job: status
+  # Checks the last commit message in the specified branch
+  branch:
+    name: Get branch
+    runs-on: ubuntu-latest
+    outputs:
+      branch: ${{ steps.check.outputs.BRANCH }}
+    steps:
+      # Step:
+      # Clones the repository with full history
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: check
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          branches=$(git branch -r | grep -E "${{ inputs.type }}/")
+          branch_count=$(echo "$branches" | wc -l)
+          if [ "$branch_count" -eq 1 ]; then
+            branch=$(echo "$branches" | sed 's|[^/]*/||')
+            echo "BRANCH=$branch" >> $GITHUB_OUTPUT
+          elif [ "$branch_count" -gt 1 ]; then
+            echo "::error::More than one branch matches the prefix '${{ inputs.type }}'" 
+            exit 1
+          else
+            echo "::error::No branch was found matching the prefix '${{ inputs.type }}'" 
+            exit 1
+          fi

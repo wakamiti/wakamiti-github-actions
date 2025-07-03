@@ -55,8 +55,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.m2/repository
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
+          key: maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: maven-
 
       # Step: Check Snapshot
       # - Verifies if the current version is a snapshot
@@ -70,7 +70,7 @@ jobs:
             artifactId=$(mvn -q help:evaluate -Dexpression=project.artifactId -DforceStdout)
             echo "PACKAGE=${groupId}.${artifactId}" >> $GITHUB_ENV
           else
-            echo warn: non-snapshot version $version deployment ignored
+            echo "::warning::non-snapshot version $version deployment ignored"
           fi
 
       # Step: Remove old packages
@@ -94,4 +94,4 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
         run: |
           cat ~/.m2/settings.xml
-          mvn deploy -DskipTests -DaltDeploymentRepository=github::default::$PACKAGES_URL
+          mvn deploy -DskipTests -Dmaven.server=github -Dmaven.snapshots=$PACKAGES_URL

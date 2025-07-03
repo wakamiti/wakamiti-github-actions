@@ -11,10 +11,9 @@ on:
         required: false
         type: string
         default: "."
-      branch:
-        required: false
+      ref:
+        required: true
         type: string
-        default: develop
     outputs:
       changelog:
         description: "The changelog name"
@@ -39,10 +38,9 @@ jobs:
       # - Clones the repository
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-      - run: git checkout ${{ inputs.branch }}
+          ref: ${{ inputs.ref }}
 
-        # Step: Set up JDK
+      # Step: Set up JDK
       # - Sets up Java Development Kit (JDK) version 17 using the Temurin distribution.
       # - Caches Maven dependencies for faster builds.
       - name: Set up JDK
@@ -67,8 +65,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.m2/repository
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
+          key: maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: maven-
 
       # Step: Prepare branch
       # - Validates existence of CHANGELOG.md

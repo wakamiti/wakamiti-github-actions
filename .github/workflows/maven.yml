@@ -7,11 +7,10 @@ on:
   workflow_call:
 
 jobs:
-  config:
+  config_maven:
     name: Configure
     runs-on: ubuntu-latest
     env:
-      SONATYPE_URL: ${{ vars.SONATYPE_URL }}
       PACKAGES_URL: ${{ vars.PACKAGES_URL }}
     steps:
       # Step: Cache Maven settings
