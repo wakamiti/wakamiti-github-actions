@@ -15,15 +15,7 @@ echo "Preparing test environment for $id with workflow $workflow..."
 # Clean and create target directory
 [ -d "$targetdir" ] && rm -rf "$targetdir"
 mkdir -p $targetdir
-
-# Use rsync instead of cp for better performance with large directories
-if command -v rsync >/dev/null 2>&1; then
-  echo "Copying workdir using rsync..."
-  rsync -a --delete $workdir/ $targetdir/
-else
-  echo "Copying workdir using cp..."
-  cp -dR $workdir/. $targetdir/
-fi
+cp -dR $workdir/. $targetdir/
 
 cd $targetdir
 
@@ -49,7 +41,7 @@ git push --set-upstream local develop --quiet
 
 # List available actions
 echo "Listing available actions..."
-act -vv -W /workflows/${workflow}.yml --list 2>/dev/null > /target/.$id
+act -vv -W /workflows/${workflow}.yml --list > /target/.$id
 
 # Apply patches in parallel if possible
 echo "Applying patches..."

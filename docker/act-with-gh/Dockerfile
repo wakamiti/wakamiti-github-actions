@@ -1,4 +1,4 @@
-FROM catthehacker/ubuntu:java-tools-latest
+FROM catthehacker/ubuntu:java-tools-22.04-20250515
 
 # Install GitHub CLI and update certificates in a single layer
 RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
@@ -14,4 +14,3 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
 # Copy certificate and update CA certificates
 COPY --from=act/mockserver /certs/mockserver.crt /usr/local/share/ca-certificates/mockserver.crt
 RUN update-ca-certificates
-

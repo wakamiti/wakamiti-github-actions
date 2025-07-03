@@ -2,8 +2,8 @@
 --platform ubuntu-latest=act-with-gh
 
 --var PACKAGES_URL=http://nexus:8081/repository/maven-snapshots
---var SONATYPE_URL=http://nexus:8081/repository/maven-internal
 
+--env SONATYPE_URL=http://mockserver:8080/repository/maven-internal
 --env GH_HOST=mockserver:8443
 --env ACTIONS_CACHE_URL=http://github-cache-server:8080/
 --env ACTIONS_RUNTIME_URL=http://github-cache-server:8080/
@@ -15,9 +15,13 @@
 
 --secret GITHUB_TOKEN=${TOKEN}
 --secret API_TOKEN=abc123
+--secret CENTRAL_USER=${ACTOR}
+--secret CENTRAL_PASSWORD=${TOKEN}
+--secret-file .secrets
 
 --network act-test-network
 --action-cache-path ${CACHES}
+--artifact-server-path ${CACHES}/.artifact
 --cache-server-path ${CACHES}/.actcache
 --bind
 --log-prefix-job-id

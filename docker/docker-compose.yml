@@ -16,14 +16,6 @@ services:
       interval: 10s
       timeout: 20s
       retries: 20
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 256M
-        reservations:
-          cpus: '0.1'
-          memory: 128M
     restart: unless-stopped
 
   nexus:
@@ -67,14 +59,6 @@ services:
       interval: 10s
       timeout: 20s
       retries: 20
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-        reservations:
-          cpus: '0.2'
-          memory: 256M
     restart: unless-stopped
 
   mockserver:
@@ -83,19 +67,11 @@ services:
       tags: ["act/mockserver"]
     container_name: act_mockserver
     command: >
-      --disable-http
+      --port 8080
       --https-port 8443
       --https-keystore /certs/mockserver.jks
     volumes:
       - /test/resources/wiremock:/home/wiremock
-    deploy:
-      resources:
-        limits:
-          cpus: '0.3'
-          memory: 256M
-        reservations:
-          cpus: '0.1'
-          memory: 128M
     restart: unless-stopped
 
 networks:
