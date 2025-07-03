@@ -1,3 +1,4 @@
+#check=skip=SecretsUsedInArgOrEnv
 FROM docker:dind AS base
 
 # Set environment variables in a single layer
@@ -28,11 +29,15 @@ RUN apk add --no-cache curl bash git gettext jq yq rsync && \
 VOLUME ["/workflows", "/test", "/target"]
 
 # Configure healthcheck
-HEALTHCHECK --interval=10s --timeout=20s --retries=20 \
+HEALTHCHECK --interval=10s --timeout=20s --retries=30 --start-period=120s \
   CMD docker info >/dev/null 2>&1 || exit 1 ; \
       HEALTHS=$(docker compose ps --format '{{.Health}}') ; \
-      [ -z "$HEALTHS" ] && exit 1 ; \
-      echo "$HEALTHS" | grep -qv 'healthy$' && exit 1 || exit 0
+        [ -z "$HEALTHS" ] && exit 1 ; \
+        echo "$HEALTHS" | grep -qv '^healthy$' && exit 1 ; \
+      docker image inspect act-with-gh >/dev/null 2>&1 || exit 1 ; \
+      BUILDING=$(docker ps --filter "status=running" --filter "name=act-with-gh" --format '{{.ID}}') ; \
+        [ -n "$BUILDING" ] && exit 1 ; \
+      exit 0
 
 ENTRYPOINT ["/docker/entrypoint.sh"]
 CMD ["sh", "-c", "sleep infinite"]
