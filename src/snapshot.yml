@@ -4,15 +4,15 @@ on:
     branches: [develop]
 
 jobs:
-  config:
+  config_maven:
     name: Maven Configuration
     uses: wakamiti/wakamiti-github-actions/.github/workflows/maven.yml@main
     secrets: inherit
 
-  validate:
+  validate_code:
     name: Validate Code
     uses: wakamiti/wakamiti-github-actions/.github/workflows/validate_code.yml@main
-    needs: config
+    needs: config_maven
     with:
       analyze: false
     secrets: inherit
@@ -20,5 +20,5 @@ jobs:
   build:
     name: Deploy
     uses: wakamiti/wakamiti-github-actions/.github/workflows/snapshot.yml@main
-    needs: [config, validate]
+    needs: [config_maven, validate_code]
     secrets: inherit

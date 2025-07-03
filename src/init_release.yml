@@ -1,21 +1,20 @@
-name: Create Release PR
+name: Create Release Branch
 on:
   push:
-    branches:
-      - release/**
-      - hotfix/**
+    branches: [ develop ]
 
 jobs:
+
   commits:
     name: Check commit ready
     uses: wakamiti/wakamiti-github-actions/.github/workflows/commits.yml@main
     secrets: inherit
     with:
-      ref: ${{ github.ref_name }}
+      ref: develop
 
   config_maven:
-    if: needs.commits.outputs.ready == 'true'
     name: Maven Configuration
+    if: needs.commits.outputs.ready == 'true'
     uses: wakamiti/wakamiti-github-actions/.github/workflows/maven.yml@main
     secrets: inherit
     needs: commits
@@ -25,13 +24,15 @@ jobs:
     secrets: inherit
     needs: config_maven
     with:
-      ref: ${{ github.ref_name }}
+      ref: develop
 
-  pr:
-    name: Pull Request
-    uses: wakamiti/wakamiti-github-actions/.github/workflows/create_pr.yml@main
+  init_release:
+    uses: wakamiti/wakamiti-github-actions/.github/workflows/init_release.yml@main
     secrets: inherit
-    needs: [ status ]
+    needs: [config_maven, status]
     with:
-      head: ${{ github.ref_name }}
       changelog: ${{ needs.status.outputs.changelog }}
+      version: ${{ needs.status.outputs.version }}
+      revision: ${{ needs.status.outputs.revision }}
+      branch: develop
+      type: release
