@@ -1,0 +1,9 @@
+{
+  "action": "workflow_dispatch",
+  "repository": {
+    "name": "tester/snapshot-workflow_dispatch"
+  },
+  "inputs": {
+    "type": "release"
+  }
+}

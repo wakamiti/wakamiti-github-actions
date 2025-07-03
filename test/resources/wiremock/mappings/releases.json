@@ -1,0 +1,48 @@
+{
+  "request": {
+    "method": "POST",
+    "urlPath": "/api/v3/repos/tester/5-deploy/releases",
+    "bodyPatterns": [
+      {
+        "matchesJsonPath": "$.name",
+        "equalTo": "0.0.1"
+      },
+      {
+        "matchesJsonPath": "$.tag_name",
+        "equalTo": "v0.0.1"
+      },
+      {
+        "matchesJsonPath": "$.body",
+        "contains": "Initial release."
+      },
+      {
+        "matchesJsonPath": "$.draft",
+        "equalTo": "false"
+      },
+      {
+        "matchesJsonPath": "$.prerelease",
+        "equalTo": "false"
+      }
+    ]
+  },
+  "response": {
+    "status": 201,
+    "jsonBody": {
+      "url": "https://mockserver:8443/repos/tester/5-deploy/releases/1",
+      "html_url": "https://mockserver:8443/tester/5-deploy/releases/v0.0.1",
+      "assets_url": "https://mockserver:8443/repos/tester/5-deploy/releases/1/assets",
+      "upload_url": "https://mockserver:8443/repos/tester/5-deploy/releases/1/assets{?name,label}",
+      "id": 1,
+      "tag_name": "v0.0.1",
+      "target_commitish": "main",
+      "name": "v0.0.1",
+      "body": "\nInitial release.  \n",
+      "draft": false,
+      "prerelease": false
+    },
+    "headers": {
+      "Content-Type": "application/json",
+      "X-RateLimit-Limit": "5000"
+    }
+  }
+}

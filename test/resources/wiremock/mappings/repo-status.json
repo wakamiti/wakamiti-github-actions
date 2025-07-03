@@ -1,0 +1,17 @@
+{
+  "request": {
+    "method": "POST",
+    "urlPath": "/repository/maven-internal/api/v1/publisher/status"
+  },
+  "response": {
+    "status": 201,
+    "jsonBody": {
+      "deploymentId": "28570f16-da32-4c14-bd2e-c1acc0782365",
+      "deploymentName": "central-bundle.zip",
+      "deploymentState": "VALIDATED",
+      "purls": [
+        "pkg:maven/es.wakamiti/wakamiti-github-actions@0.0.1"
+      ]
+    }
+  }
+}

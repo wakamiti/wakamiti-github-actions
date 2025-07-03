@@ -1,18 +1,18 @@
 #!/bin/bash
 set -e
 
-event="pull_request"
+event="workflow_dispatch"
 workdir="release"
-data="pull_request-release.json"
-workflow="validate"
+data="workflow_dispatch-hotfix.json"
+workflow="release_wd"
 
 # --------------------------
 
 setup() {
   echo "setup"
   cd /target/$1
-  git checkout -b release/v0.0.1
-  git push --set-upstream local release/v0.0.1
+  git checkout -b hotfix/v0.0.1
+  git push --set-upstream local hotfix/v0.0.1
 }
 
 teardown() {
@@ -27,4 +27,4 @@ id=${id#Test_}
 /docker/prepare $workdir $id $workflow
 setup $id
 /docker/act $event $id $data $workflow
-teardown
+teardown $id

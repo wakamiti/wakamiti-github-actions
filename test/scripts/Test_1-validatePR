@@ -1,10 +1,10 @@
 #!/bin/bash
 set -e
 
-event="workflow_dispatch"
+event="pull_request"
 workdir="snapshot"
-data="workflow_dispatch.json"
-workflow="release"
+data="pull_request.json"
+workflow="validate"
 
 # --------------------------
 
@@ -22,6 +22,6 @@ id=$(basename "$0")
 id=${id#Test_}
 
 /docker/prepare $workdir $id $workflow
-setup
-act -vv ${event} -C /target/$id -e /test/resources/events/${data} -W /workflows/${workflow}.yml
-teardown
+setup $id
+/docker/act $event $id $data $workflow
+teardown $id

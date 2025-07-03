@@ -1,0 +1,14 @@
+{
+  "request": {
+    "method": "POST",
+    "urlPath": "/repos/tester/5-deploy/releases/1/assets",
+    "queryParameters": {
+      "name": {
+        "matches": "wakamiti-github-actions-0\\.0\\.1\\.(jar|pom)"
+      }
+    }
+  },
+  "response": {
+    "status": 204
+  }
+}

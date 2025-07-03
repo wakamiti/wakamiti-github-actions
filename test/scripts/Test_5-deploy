@@ -1,0 +1,31 @@
+#!/bin/bash
+set -e
+
+event="pull_request"
+workdir="release"
+data="pull_request-merged.json"
+workflow="publish"
+
+# --------------------------
+
+setup() {
+  :
+}
+
+teardown() {
+  cd /target/$1
+  if ! git tag -l | grep -q "v0.0.1"; then
+    echo "ERROR: the tag '$tag' does not exist."
+    exit 1
+  fi
+}
+
+# --------------------------
+
+id=$(basename "$0")
+id=${id#Test_}
+
+/docker/prepare $workdir $id $workflow
+setup $id
+/docker/act $event $id $data $workflow
+teardown $id

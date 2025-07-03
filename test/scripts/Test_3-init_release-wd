@@ -1,0 +1,40 @@
+#!/bin/bash
+set -e
+
+event="workflow_dispatch"
+workdir="snapshot"
+data="workflow_dispatch-release.json"
+workflow="init_release_wd"
+
+# --------------------------
+
+setup() {
+  :
+}
+
+teardown() {
+  branch="release/v0.0.1"
+  cd /target/$1
+  git checkout $branch
+  git log --stat
+  if ! git log -1 --pretty=%B | grep -q "#ready"; then
+    echo ERROR: commit message does not contain "#ready"
+    exit 1
+  fi
+  hash1=$(git merge-base $branch develop)
+  hash2=$(git rev-parse develop)
+  if [ ! "$hash1" = "$hash2" ]; then
+    echo "ERROR: the branch '$branch' does not originate from 'develop'"
+    exit 1
+  fi
+}
+
+# --------------------------
+
+id=$(basename "$0")
+id=${id#Test_}
+
+/docker/prepare $workdir $id $workflow
+setup $id
+/docker/act $event $id $data $workflow
+teardown $id
