@@ -145,7 +145,7 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
         run: |
           git add .
-          git commit --message "Prepare ${{ inputs.type }} ${{ env.NEW_VERSION }}"
+          git commit --message "build(${{ inputs.type }}): bump version to ${{ env.NEW_VERSION }}"
           git push origin ${{ inputs.type }}/v${{ env.NEW_VERSION }}
 
       - name: Pull Request info
