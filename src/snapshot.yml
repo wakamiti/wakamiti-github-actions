@@ -2,13 +2,11 @@ name: Deploy Snapshot
 on:
   push:
     branches: [develop]
-
 jobs:
   config_maven:
     name: Maven Configuration
     uses: wakamiti/wakamiti-github-actions/.github/workflows/maven.yml@main
     secrets: inherit
-
   validate_code:
     name: Validate Code
     uses: wakamiti/wakamiti-github-actions/.github/workflows/validate_code.yml@main
@@ -16,7 +14,6 @@ jobs:
     with:
       analyze: false
     secrets: inherit
-
   build:
     name: Deploy
     uses: wakamiti/wakamiti-github-actions/.github/workflows/snapshot.yml@main

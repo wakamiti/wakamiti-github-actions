@@ -2,25 +2,22 @@ name: Publish release
 on:
   workflow_dispatch:
   pull_request:
-    branches: [ main ]
-    types: [ closed ]
+    branches: [main]
+    types: [closed]
 #  push:
 #    branches: [ main ]
 #    paths:
 #      - 'src/**'
 #      - 'pom.xml'
 
-
 jobs:
-
   config_maven:
     name: Maven Configuration
-#    if: github.event.pull_request.merged == true &&
-#      (startsWith(github.event.pull_request.head.ref, 'release/')
-#      || startsWith(github.event.pull_request.head.ref, 'hotfix/'))
+    #    if: github.event.pull_request.merged == true &&
+    #      (startsWith(github.event.pull_request.head.ref, 'release/')
+    #      || startsWith(github.event.pull_request.head.ref, 'hotfix/'))
     uses: wakamiti/wakamiti-github-actions/.github/workflows/maven.yml@main
     secrets: inherit
-
   validate_code:
     name: Validate Code
     uses: wakamiti/wakamiti-github-actions/.github/workflows/validate_code.yml@main
@@ -28,14 +25,12 @@ jobs:
     secrets: inherit
     with:
       extra_options: -Dsonar.branch.name=main
-
   status:
     uses: wakamiti/wakamiti-github-actions/.github/workflows/status.yml@main
     needs: [config_maven, validate_code]
     secrets: inherit
     with:
-      ref: main
-
+      branch: main
   deploy:
     name: Deploy Release
     uses: wakamiti/wakamiti-github-actions/.github/workflows/deploy.yml@main

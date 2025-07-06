@@ -1,37 +1,43 @@
 name: Create Release PR
 on:
+  workflow_dispatch:
+    inputs:
+      type:
+        required: true
+        description: "The release type"
+        type: choice
+        options:
+          - release
+          - hotfix
+      version:
+        required: true
+        description: "The release version X.Y.Z"
+        type: string
   push:
     branches:
       - release/**
       - hotfix/**
-
 jobs:
-  commits:
-    name: Check commit ready
-    uses: wakamiti/wakamiti-github-actions/.github/workflows/commits.yml@main
-    secrets: inherit
-    with:
-      ref: ${{ github.ref_name }}
-
   config_maven:
-    if: needs.commits.outputs.ready == 'true'
     name: Maven Configuration
     uses: wakamiti/wakamiti-github-actions/.github/workflows/maven.yml@main
     secrets: inherit
-    needs: commits
-
   status:
     uses: wakamiti/wakamiti-github-actions/.github/workflows/status.yml@main
     secrets: inherit
-    needs: config_maven
+    needs: [config_maven]
     with:
-      ref: ${{ github.ref_name }}
+      branch: ${{ github.event_name == 'workflow_dispatch' 
+        && format('{0}/{1}', github.event.inputs.type, 
+          startsWith(github.event.inputs.version, 'v') && github.event.inputs.version || 
+          format('v{0}', github.event.inputs.version)) 
+        || github.ref_name }}
 
   pr:
     name: Pull Request
     uses: wakamiti/wakamiti-github-actions/.github/workflows/create_pr.yml@main
     secrets: inherit
-    needs: [ status ]
+    needs: [status]
     with:
-      head: ${{ github.ref_name }}
+      head: ${{ needs.status.outputs.branch }}
       changelog: ${{ needs.status.outputs.changelog }}
