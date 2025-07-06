@@ -1,0 +1,32 @@
+#
+# This workflow automates the process of rebasing multiple branches (develop, release/\*, hotfix/\*) onto the main
+# branch.
+#
+on:
+  workflow_call:
+jobs:
+  rebase:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+
+      # Checks out the full history of repository code.
+      - name: Checkout target branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Fetches all remote branches, finds branches matching develop, release/*,
+      # or hotfix/*. For each branch:
+      #  - Checks out the branch.
+      #  - Rebases it onto origin/main.
+      #  - Pushes the rebased branch to the remote using --force-with-lease.
+      - name: Rebase
+        run: |
+          git fetch origin "+refs/heads/*:refs/remotes/origin/*"
+          branches=$(git branch -r | grep -E 'origin/(develop|release/[^ ]+|hotfix/[^ ]+)' | sed 's|origin/||')
+          for branch in $branches; do
+            git checkout $branch
+            git rebase origin/main
+            git push origin $branch --force-with-lease
+          done

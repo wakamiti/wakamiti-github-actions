@@ -1,30 +1,22 @@
-name: Validate New Version
+#
+# This workflow validates the release version and changelog for a Maven/Java
+# project.
+#
 on:
   workflow_call:
     inputs:
-      # Input: working-directory
-      # - Optional input specifying the working directory for the workflow.
-      # - Type: string
-      # - Default: "."
-      working-directory:
-        required: false
-        type: string
-        default: "."
 
-      ref:
+      # The branch to check out and analyze.
+      branch:
         required: true
         type: string
 
-      # Input: changelog
-      # - The changelog file name
-      # - Type: string
+      # The changelog file name.
       changelog:
         required: true
         type: string
 
-      # Input: version
-      # - The current version
-      # - Type: string
+      # The current version to validate.
       version:
         required: true
         type: string
@@ -40,15 +32,15 @@ jobs:
       GITHUB_ACTOR: ${{ github.actor }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      # Step: Checkout code
-      # - Clones the repository
+
+      # Checks out the repository code using the specified branch provided as
+      # input.
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.ref }}
+          ref: ${{ inputs.branch }}
 
-      # Step: Set up JDK
-      # - Sets up Java Development Kit (JDK) version 17 using the Temurin distribution.
-      # - Caches Maven dependencies for faster builds.
+      # Sets up Java Development Kit (JDK) version 17 using the Temurin
+      # distribution.
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
@@ -57,16 +49,14 @@ jobs:
           cache: maven
           overwrite-settings: 'false'
 
-      # Step: Cache Maven settings
-      # - Caches Maven settings file to avoid re-downloading it.
+      # Caches Maven settings file to avoid re-downloading it.
       - name: Cache Maven settings
         uses: actions/cache@v4
         with:
           path: ~/.m2/settings.xml
           key: settings-xml
 
-      # Step: Cache Maven packages
-      # - Caches Maven dependencies to reduce build time.
+      # Caches Maven dependencies to reduce build time.
       - name: Cache Maven packages
         uses: actions/cache@v4
         with:
@@ -74,9 +64,12 @@ jobs:
           key: maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: maven-
 
-      # Step: Check version
+      # This step performs several checks on the version and changelog:
+      # - Verifies that the changelog contains an [unreleased] block.
+      # - Ensures the version is not a SNAPSHOT.
+      # - Checks that there is no existing git tag with the provided version.
+      # - Runs Maven verification with the release profile.
       - name: Check version
-        working-directory: ${{ inputs.working-directory }}
         run: |
           if grep -iq "\[unreleased\]" ${{ inputs.changelog }}; then 
             echo "::error::${{ inputs.changelog }} must contain an [unreleased] block."

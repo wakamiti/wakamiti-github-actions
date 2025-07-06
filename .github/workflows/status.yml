@@ -1,19 +1,16 @@
-
-name: Get version status
+#
+# This workflow extracts and outputs the current changelog file, project
+# version, revision property usage, and branch name.
+#
 on:
   workflow_call:
     inputs:
-      # Input: working-directory
-      # - Optional working directory for the workflow
-      # - Type: string
-      # - Default: "."
-      working-directory:
-        required: false
-        type: string
-        default: "."
-      ref:
+
+      # The branch to check out and analyze.
+      branch:
         required: true
         type: string
+
     outputs:
       changelog:
         description: "The changelog name"
@@ -24,25 +21,28 @@ on:
       revision:
         description: "Flag indicating if the pom version is managed through the revision property"
         value: ${{ jobs.status.outputs.revision }}
+      branch:
+        description: "The current branch"
+        value: ${{ inputs.branch }}
 
 jobs:
   status:
-    name: Get status
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       changelog: ${{ steps.changelog.outputs.CHANGELOG }}
       version: ${{ steps.version.outputs.VERSION }}
       revision: ${{ steps.version.outputs.REVISION }}
     steps:
-      # Step: Checkout code
-      # - Clones the repository
+
+      # Checks out the repository code using the specified branch provided as
+      # input.
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.ref }}
+          ref: ${{ inputs.branch }}
 
-      # Step: Set up JDK
-      # - Sets up Java Development Kit (JDK) version 17 using the Temurin distribution.
-      # - Caches Maven dependencies for faster builds.
+      # Sets up Java Development Kit (JDK) version 17 using the Temurin
+      # distribution.
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
@@ -51,16 +51,14 @@ jobs:
           cache: maven
           overwrite-settings: 'false'
 
-      # Step: Cache Maven settings
-      # - Caches Maven settings file to avoid re-downloading it.
+      # Caches Maven settings file to avoid re-downloading it.
       - name: Cache Maven settings
         uses: actions/cache@v4
         with:
           path: ~/.m2/settings.xml
           key: settings-xml
 
-      # Step: Cache Maven packages
-      # - Caches Maven dependencies to reduce build time.
+      # Caches Maven dependencies to reduce build time.
       - name: Cache Maven packages
         uses: actions/cache@v4
         with:
@@ -68,11 +66,9 @@ jobs:
           key: maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: maven-
 
-      # Step: Prepare branch
-      # - Validates existence of CHANGELOG.md
+      # Validates existence of CHANGELOG.md
       - name: Prepare branch
         id: changelog
-        working-directory: ${{ inputs.working-directory }}
         run: |
           CHANGELOG=$(ls | grep -i "changelog.md")
           if [ -z "$CHANGELOG" ]; then
@@ -81,9 +77,10 @@ jobs:
           fi
           echo "CHANGELOG=$CHANGELOG" >> $GITHUB_OUTPUT
 
+      # Determines the current Maven project version and if the revision
+      # property is used.
       - name: Check version
         id: version
-        working-directory: ${{ inputs.working-directory }}
         env:
           CHANGELOG: ${{ steps.changelog.outputs.CHANGELOG }}
         run: |

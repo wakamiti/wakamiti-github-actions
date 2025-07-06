@@ -1,22 +1,32 @@
+#
+# This workflow automates the initialization of a new release or hotfix branch
+# for a Maven/Java project.
+#
 on:
   workflow_call:
     inputs:
-      working-directory:
-        required: false
-        type: string
-        default: "."
+
+      # The base branch to create the release/hotfix from.
       branch:
         required: true
         type: string
+
+      # The changelog file name.
       changelog:
         required: true
         type: string
+
+      # The current version.
       version:
         required: true
         type: string
+
+      # Boolean indicating if the revision property should be used.
       revision:
         required: true
         type: boolean
+
+      # The type of release (release or hotfix).
       type:
         required: true
         type: string
@@ -24,23 +34,23 @@ on:
 jobs:
   init_release:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     env:
       CHANGELOG: ${{ inputs.changelog }}
       VERSION: ${{ inputs.version }}
       REVISION: ${{ inputs.revision }}
     steps:
-      # Step: Checkout code
-      # - Checks out the repository code.
-      # - Fetch-depth is set to 0 to ensure the full history is available for analysis.
+
+      # Checks out the full history of repository code using the specified
+      # branch provided as input.
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - run: git checkout ${{ inputs.branch }}
+          ref: ${{ inputs.branch }}
 
-        # Step: Set up JDK
-      # - Sets up Java Development Kit (JDK) version 17 using the Temurin distribution.
-      # - Caches Maven dependencies for faster builds.
+      # Sets up Java Development Kit (JDK) version 17 using the Temurin
+      # distribution.
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
@@ -49,16 +59,14 @@ jobs:
           cache: maven
           overwrite-settings: 'false'
 
-      # Step: Cache Maven settings
-      # - Caches Maven settings file to avoid re-downloading it.
+      # Caches Maven settings file to avoid re-downloading it.
       - name: Cache Maven settings
         uses: actions/cache@v4
         with:
           path: ~/.m2/settings.xml
           key: settings-xml
 
-      # Step: Cache Maven packages
-      # - Caches Maven dependencies to reduce build time.
+      # Caches Maven dependencies to reduce build time.
       - name: Cache Maven packages
         uses: actions/cache@v4
         with:
@@ -66,12 +74,10 @@ jobs:
           key: maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: maven-
 
-      # Step: Check version
-      # - Validates changelog format and version requirements
-      # - Ensures the current version is a SNAPSHOT
-      # - Verifies version doesn't already exist in changelog
+      # Validates changelog format and version requirements, ensures the current
+      # version is a SNAPSHOT and verifies version doesn't already exist in
+      # changelog
       - name: Check version
-        working-directory: ${{ inputs.working-directory }}
         run: |
           if ! grep -iq "\[unreleased\]" ${{ env.CHANGELOG }}; then 
             echo "::error::${{ env.CHANGELOG }} must contain an [unreleased] block."
@@ -88,45 +94,42 @@ jobs:
           fi
           echo "NEW_VERSION=$new_version" >> $GITHUB_ENV
 
-      # Step: Initialize git config
-      # - Creates new 'release' branch from 'develop'
+      # Initializes mandatory Git configuration and creates a new branch for the
+      # release or hotfix.
       - name: Initialize mandatory git config
-        working-directory: ${{ inputs.working-directory }}
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email noreply@github.com
           git checkout -b ${{ inputs.type }}/v${{ env.NEW_VERSION }} ${{ inputs.branch }}
 
-      # Step: Change version
-      # - Updates version in pom.xml (supports revision property)
-      # - Updates changelog by replacing [unreleased] with version
-      # - Extracts changelog body for PR
+      # Updates the version in the pom.xml and changelog, and extracts the
+      # changelog content for the pull request
       - name: Change version
         id: change-version
-        working-directory: ${{ inputs.working-directory }}
         run: |
           if [[ ${REVISION} == 'true' ]]; then
             mvn versions:set-property -Dproperty=revision -DnewVersion=${{ env.NEW_VERSION }} -DgenerateBackupPoms=false
           else
             mvn versions:set -DnewVersion=${{ env.NEW_VERSION }} -DgenerateBackupPoms=false
           fi
-          body=$(sed -n '/^## \[unreleased\]/,/^## \[/p' ${{ env.CHANGELOG }} | sed '/^## \[/d' | sed ':a;N;$!ba;s/\n/\\n/g')
+          body=$(sed -n '/^## \[unreleased\]/,/^## \[/p' ${{ env.CHANGELOG }} | sed '/^## \[/d' \
+            | sed ':a;N;$!ba;s/\n/\\n/g')
           sed -i "s/\[unreleased\]/[${{ env.NEW_VERSION }}] - $(date +%F)/" ${{ env.CHANGELOG }}
           echo "PR_BODY=$body" >> $GITHUB_ENV
 
-      # Step: Commit and push
-      # - Commits version changes
-      # - Pushes release branch
+      # Commits the version changes and pushes the new branch
       - name: Commit and push
-        working-directory: ${{ inputs.working-directory }}
         run: |
           git add .
           git commit --message "$(printf "Prepare ${{ inputs.type }} ${{ env.NEW_VERSION }}\n\n#ready")"
           git push origin ${{ inputs.type }}/v${{ env.NEW_VERSION }}
 
+      # Rollback changes in case of failure.
+      # This step checks if the new branch created during the workflow exists.
+      # If it does, it switches back to the base branch, deletes the new branch
+      # locally, and removes it from the remote repository to ensure a clean state.
       - name: Rollback changes
         if: failure()
-        working-directory: ${{ inputs.working-directory }}
         run: |
           if git show-ref --quiet refs/heads/${{ inputs.type }}/v${{ env.NEW_VERSION }}; then
             git checkout ${{ inputs.branch }}

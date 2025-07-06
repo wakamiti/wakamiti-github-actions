@@ -1,56 +1,39 @@
-# Workflow Name: Deploy Snapshot
-# This GitHub Actions workflow deploys snapshot versions of a Maven project to a repository.
-
-name: Deploy Snapshot
+#
+# This workflow deploys snapshot versions of a Maven project to a repository.
+#
 on:
   workflow_call:
-    inputs:
-      # Input: working-directory
-      # - Optional working directory for the workflow
-      # - Type: string
-      # - Default: "."
-      working-directory:
-        required: false
-        type: string
-        default: "."
-
 jobs:
   build:
-    name: Deploy
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     env:
       GITHUB_ACTOR: ${{ github.actor }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       PACKAGES_URL: ${{ vars.PACKAGES_URL }}
     steps:
-      # Step: Checkout code
-      # - Clones the repository
+
+      # Checks out the repository code.
       - uses: actions/checkout@v4
 
-      # Step: Setup JDK
-      # - Configures JDK 17 using Temurin distribution
-      # - Enables Maven dependency caching
+      # Sets up Java Development Kit (JDK) version 17 using the Temurin
+      # distribution.
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
           cache: maven
-#          server-id: 'github'
-#          server-username: 'GITHUB_ACTOR'
-#          server-password: 'GITHUB_TOKEN'
           overwrite-settings: 'false'
 
-      # Step: Cache Maven settings
-      # - Caches the Maven settings file to avoid redownloading
+      # Caches Maven settings file to avoid re-downloading it.
       - name: Cache Maven settings
         uses: actions/cache@v4
         with:
           path: ~/.m2/settings.xml
           key: settings-xml
 
-      # Step: Cache Maven packages
-      # - Caches Maven dependencies to reduce build time
+      # Caches Maven dependencies to reduce build time.
       - name: Cache Maven packages
         uses: actions/cache@v4
         with:
@@ -58,9 +41,8 @@ jobs:
           key: maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: maven-
 
-      # Step: Check Snapshot
-      # - Verifies if the current version is a snapshot
-      # - If snapshot, sets package identifier in the environment variable
+      # Verifies if the current version is a snapshot. If snapshot, sets package
+      # identifier in the environment variable
       - name: Check Snapshot
         working-directory: ${{ inputs.working-directory }}
         run: |
@@ -73,9 +55,8 @@ jobs:
             echo "::warning::non-snapshot version $version deployment ignored"
           fi
 
-      # Step: Remove old packages
-      # - Deletes old versions of the package from Maven repository
-      # - Only runs if a valid package is detected
+      # Deletes old versions of the package from Maven repository. Only runs if
+      # a valid package is detected
       - name: Remove old packages
         uses: smartsquaregmbh/delete-old-packages@v0.8.1
         if: env.PACKAGE != ''
@@ -86,9 +67,8 @@ jobs:
           keep: 0
           names: ${{ env.PACKAGE }}
 
-      # Step: Build and Deploy
-      # - Builds and deploys the snapshot to Maven repository
-      # - Only runs if a valid package is detected
+      # Builds and deploys the snapshot to Maven repository. Only runs if a
+      # valid package is detected
       - name: Build and Deploy
         if: env.PACKAGE != ''
         working-directory: ${{ inputs.working-directory }}

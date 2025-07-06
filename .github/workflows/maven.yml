@@ -1,21 +1,18 @@
-# Workflow Name: Create Maven Config
-# This GitHub Actions workflow generates and caches Maven settings for dependency management
+#
+# This workflow generates and caches Maven settings for dependency management
 # and artifact deployment to GitHub Packages and Sonatype repositories.
-
-name: Create Maven Config
+#
 on:
   workflow_call:
-
 jobs:
   config_maven:
-    name: Configure
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     env:
       PACKAGES_URL: ${{ vars.PACKAGES_URL }}
     steps:
-      # Step: Cache Maven settings
-      # - Attempts to restore cached settings.xml file
-      # - Cache key is based on file content
+
+      # Attempts to restore cached settings.xml file.
       - name: Cache Maven settings
         id: maven-cache
         uses: actions/cache@v4
@@ -23,13 +20,7 @@ jobs:
           path: ~/.m2/settings.xml
           key: settings-xml
 
-      # Step: Create settings.xml
-      # - Generates Maven settings if not found in cache
-      # - Configures:
-      #   * GitHub authentication credentials
-      #   * Repository settings for snapshots
-      #   * Plugin repository configuration
-      #   * Wakamiti profile activation
+      # Generates Maven settings if not found in cache.
       - name: Create settings.xml
         if: steps.maven-cache.outputs.cache-hit != 'true'
         run: |

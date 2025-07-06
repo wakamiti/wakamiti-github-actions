@@ -1,30 +1,41 @@
-name: Deploy Release
+#
+# This workflow automates the deployment of a new release for a Maven/Java
+# project.
+#
+# Requirements:
+#   - secrets for Maven Central and GPG signing must be configured.
+#   - gh CLI must be available for release creation and artifact upload.
+#
 on:
   workflow_call:
     inputs:
-      working-directory:
-        required: false
-        type: string
-        default: "."
+
+      # The changelog file name.
       changelog:
         required: true
         type: string
+
+      # The current version.
       version:
         required: true
         type: string
 
 jobs:
   deploy:
-    name: Deploy
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     env:
       CHANGELOG: ${{ inputs.changelog }}
       VERSION: ${{ inputs.version }}
     steps:
+
+      # Checks out the full history of repository code.
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+          fetch-depth: 0
 
+      # Sets up Java Development Kit (JDK) version 17 using the Temurin
+      # distribution.
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
@@ -36,8 +47,7 @@ jobs:
           gpg-private-key: ${{ secrets.GPG_SECRET_KEY }}
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
 
-      # Step: Cache Maven packages
-      # - Caches Maven dependencies to reduce build time.
+      # Caches Maven dependencies to reduce build time.
       - name: Cache Maven packages
         uses: actions/cache@v4
         with:
@@ -45,8 +55,7 @@ jobs:
           key: maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: maven-
 
-      # Step: Cache SonarCloud packages
-      # - Caches SonarCloud dependencies to speed up the analysis process.
+      # Caches SonarCloud dependencies to speed up the analysis process.
       - name: Cache SonarCloud packages
         uses: actions/cache@v4
         if: ${{ hashFiles('**/src/**') != '' }}
@@ -55,8 +64,8 @@ jobs:
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
 
+      # Builds and deploys the project to Maven Central, skipping tests.
       - name: Build and Deploy
-        working-directory: ${{ inputs.working-directory }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MAVEN_USERNAME: ${{ secrets.CENTRAL_USER }}
@@ -64,8 +73,8 @@ jobs:
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_SECRET_KEY_PASSWORD }}
         run: mvn deploy -DskipTests -Dmaven.server=central
 
-      - name: Recovery data
-        shell: bash
+      # Extracts release data from the changelog and prepares the release body.
+      - name: Recovery release data
         run: |
           tag="v${{ env.VERSION }}"
           prev_tag=$(git describe --tags --abbrev=0 || echo "")
@@ -78,6 +87,7 @@ jobs:
           echo "TAG=$tag" >> $GITHUB_ENV
           echo "BODY=$body" >> $GITHUB_ENV
 
+      # Creates a Git tag, pushes it, creates a GitHub release, and uploads artifacts.
       - name: Create release
         run: |
           git tag ${{ env.TAG }}

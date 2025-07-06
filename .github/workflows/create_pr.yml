@@ -1,58 +1,66 @@
-name: Create Pull Request
+#
+# This workflow automates the creation of a Pull Request (PR) for new
+# release/hotfix branches.
+#
+# Requirements:
+#   - gh CLI installed and authenticated.
+#   - jq installed for JSON manipulation.
+#   - secrets.GITHUB_TOKEN and secrets.API_TOKEN configured.
+#
 on:
   workflow_call:
     inputs:
+      # Optional base branch for the PR
       base:
         type: string
         required: false
         default: main
+
+      # release/hotfix branch name
       head:
         type: string
         required: true
+
+      # Path to the changelog file
       changelog:
         type: string
         required: true
 
 jobs:
   pr:
-    name: New Pull Request
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     env:
       BASE: ${{ inputs.base }}
       HEAD: ${{ inputs.head }}
       CHANGELOG: ${{ inputs.changelog }}
     steps:
 
-        - name: Recovery data
-          shell: bash
-          run: |
-            TYPE=$(echo "${{ env.HEAD }}" | grep -oP '^(release|hotfix)')
-            NEW_VERSION=$(echo "${{ env.HEAD }}" | grep -oP '(?<=v)\d+\.\d+\.\d+')
-            BODY=$(sed -n "/^## \[$NEW_VERSION\]/,/^## \[/p" ${{ env.CHANGELOG }} | \
-              sed '/^## \[/d' | sed ':a;N;$!ba;s/\n/\\n/g')
-            echo "TITLE=New version v$NEW_VERSION" >> $GITHUB_ENV
-            echo "BODY=$BODY" >> $GITHUB_ENV
+      # Extracts branch type (release/hotfix) from HEAD, new version number from
+      # HEAD and the relevant changelog section for the new version.
+      - name: Recovery data
+        run: |
+          TYPE=$(echo "${{ env.HEAD }}" | grep -oP '^(release|hotfix)')
+          NEW_VERSION=$(echo "${{ env.HEAD }}" | grep -oP '(?<=v)\d+\.\d+\.\d+')
+          BODY=$(sed -n "/^## \[$NEW_VERSION\]/,/^## \[/p" ${{ env.CHANGELOG }} | \
+            sed '/^## \[/d' | sed ':a;N;$!ba;s/\n/\\n/g')
+          echo "TITLE=New version v$NEW_VERSION" >> $GITHUB_ENV
+          echo "BODY=$BODY" >> $GITHUB_ENV
 
-
-        # Step: Create pull request
-        # - Fetches list of team reviewers from GitHub API
-        # - Creates PR from release branch to main
-        # - Adds changelog content to PR body
-        # - Assigns team reviewers
-        - name: create pull request
-          shell: bash
-          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-            GH_TOKEN: ${{ secrets.API_TOKEN }}
-            ORG: ${{ github.repository_owner }}
-            REPO: ${{ github.repository }}
-            TEAM: 'reviewers'
-          run: |
-            PR=$(gh api -X POST /repos/$REPO/pulls \
-              -F base='${{ env.BASE }}' \
-              -F head="${{ env.HEAD }}" \
-              -F title="${{ env.TITLE }}" \
-              -F body="${{ env.BODY }}" \
-              --jq '.id')
-            data=$(gh api /orgs/$ORG/teams/$TEAM/members | jq -r 'map(.login)')
-            echo '{ "reviewers":$data }' | gh api -X POST /repos/$REPO/pulls/$PR/requested_reviewers --input -
+      # Creates PR from release branch to main
+      - name: create pull request
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.API_TOKEN }}
+          ORG: ${{ github.repository_owner }}
+          REPO: ${{ github.repository }}
+          TEAM: 'reviewers'
+        run: |
+          PR=$(gh api -X POST /repos/$REPO/pulls \
+            -F base='${{ env.BASE }}' \
+            -F head="${{ env.HEAD }}" \
+            -F title="${{ env.TITLE }}" \
+            -F body="${{ env.BODY }}" \
+            --jq '.id')
+          data=$(gh api /orgs/$ORG/teams/$TEAM/members | jq -r 'map(.login)')
+          echo '{ "reviewers":$data }' | gh api -X POST /repos/$REPO/pulls/$PR/requested_reviewers --input -
