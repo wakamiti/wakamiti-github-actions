@@ -3,5 +3,8 @@
     "name": "tester/repository2"
   },
   "ref": "refs/heads/hotfix/v0.0.1",
-  "head_commit": { "id": "abc123" }
+  "head_commit": {
+    "id": "123",
+    "message": "feat: some feature that is #ready"
+  }
 }

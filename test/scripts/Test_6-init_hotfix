@@ -4,7 +4,7 @@ set -e
 event="workflow_dispatch"
 workdir="snapshot"
 data="workflow_dispatch-hotfix.json"
-workflow="init_release_wd"
+workflow="init_release"
 
 # --------------------------
 

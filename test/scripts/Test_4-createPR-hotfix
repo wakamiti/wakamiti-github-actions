@@ -12,7 +12,6 @@ setup() {
   echo "setup"
   cd /target/$1
   git checkout -b hotfix/v0.0.1
-  git commit --allow-empty -m "#ready"
   git push --set-upstream local hotfix/v0.0.1
 }
 

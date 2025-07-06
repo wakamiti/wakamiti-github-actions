@@ -2,7 +2,7 @@
   "repository": {
     "name": "tester/repository2"
   },
-  "ref": "refs/heads/release/v0.0.1",
+  "ref": "refs/heads/develop",
   "head_commit": {
     "id": "123",
     "message": "feat: some feature that is #ready"

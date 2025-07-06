@@ -4,6 +4,7 @@
     "name": "tester/snapshot-workflow_dispatch"
   },
   "inputs": {
-    "type": "hotfix"
+    "type": "hotfix",
+    "version": "0.0.1"
   }
 }

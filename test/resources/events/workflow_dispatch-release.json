@@ -4,6 +4,7 @@
     "name": "tester/snapshot-workflow_dispatch"
   },
   "inputs": {
-    "type": "release"
+    "type": "release",
+    "version": "v0.0.1"
   }
 }

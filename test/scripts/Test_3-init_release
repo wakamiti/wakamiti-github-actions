@@ -3,16 +3,13 @@ set -e
 
 event="push"
 workdir="snapshot"
-data="push_develop.json"
+data="push_develop-ready.json"
 workflow="init_release"
 
 # --------------------------
 
 setup() {
-  echo "setup"
-  cd /target/$1
-  git checkout develop
-  git commit --allow-empty -m "#ready"
+  :
 }
 
 teardown() {
