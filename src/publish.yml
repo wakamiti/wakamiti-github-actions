@@ -4,18 +4,10 @@ on:
   pull_request:
     branches: [main]
     types: [closed]
-#  push:
-#    branches: [ main ]
-#    paths:
-#      - 'src/**'
-#      - 'pom.xml'
 
 jobs:
   config_maven:
     name: Maven Configuration
-    #    if: github.event.pull_request.merged == true &&
-    #      (startsWith(github.event.pull_request.head.ref, 'release/')
-    #      || startsWith(github.event.pull_request.head.ref, 'hotfix/'))
     uses: wakamiti/wakamiti-github-actions/.github/workflows/maven.yml@main
     secrets: inherit
   validate_code:

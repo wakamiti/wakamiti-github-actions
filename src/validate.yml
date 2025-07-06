@@ -18,7 +18,9 @@ jobs:
     secrets: inherit
     needs: config_maven
   status:
-    if: github.event.pull_request.base.ref == 'main' && (startsWith(github.event.pull_request.head.ref, 'release/') || startsWith(github.event.pull_request.head.ref, 'hotfix/'))
+    if: github.event.pull_request.base.ref == 'main'
+      && (startsWith(github.event.pull_request.head.ref, 'release/')
+      || startsWith(github.event.pull_request.head.ref, 'hotfix/'))
     uses: wakamiti/wakamiti-github-actions/.github/workflows/status.yml@main
     secrets: inherit
     needs: [config_maven, validate_code]

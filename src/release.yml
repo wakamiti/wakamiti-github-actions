@@ -32,7 +32,6 @@ jobs:
           startsWith(github.event.inputs.version, 'v') && github.event.inputs.version || 
           format('v{0}', github.event.inputs.version)) 
         || github.ref_name }}
-
   pr:
     name: Pull Request
     uses: wakamiti/wakamiti-github-actions/.github/workflows/create_pr.yml@main
