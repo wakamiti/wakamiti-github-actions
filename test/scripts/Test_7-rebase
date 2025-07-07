@@ -4,12 +4,11 @@ set -e
 event="push"
 workdir="snapshot"
 data="push_main.json"
-workflow="validate"
+workflow="rebase"
 
 # --------------------------
 
 setup() {
-  echo "setup"
   cd /target/$1
   git checkout main
   echo "New line" >> CHANGELOG.md

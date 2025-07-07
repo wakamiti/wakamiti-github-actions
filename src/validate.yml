@@ -2,11 +2,7 @@ name: Validate New Code
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-  push:
-    branches: [main]
-    paths:
-      - 'src/**'
-      - 'pom.xml'
+
 jobs:
   config_maven:
     name: Maven Configuration
@@ -35,8 +31,3 @@ jobs:
       branch: ${{ github.event.pull_request.head.ref }}
       changelog: ${{ needs.status.outputs.changelog }}
       version: ${{ needs.status.outputs.version }}
-  rebase:
-    name: Rebase branches
-    if: github.event_name == 'push'
-    uses: wakamiti/wakamiti-github-actions/.github/workflows/rebase.yml@main
-    needs: [validate_code]

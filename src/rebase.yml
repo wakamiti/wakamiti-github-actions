@@ -1,0 +1,9 @@
+name: Rebase branches
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  rebase:
+    name: Rebase branches
+    uses: wakamiti/wakamiti-github-actions/.github/workflows/rebase.yml@main
