@@ -15,4 +15,5 @@ jobs:
     steps:
       - uses: jetersen/ghaction.file.sync@v1
         with:
-          githubToken: ${{ secrets.API_TOKEN }}
+          appId: ${{ secrets.APP_ID }}
+          privateKey: ${{ secrets.APP_KEY }}
