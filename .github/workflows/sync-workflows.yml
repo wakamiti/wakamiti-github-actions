@@ -1,4 +1,6 @@
-
+#
+# see: https://github.com/jetersen/ghaction.file.sync
+#
 name: Sincronizar Workflows
 on:
   workflow_dispatch:
