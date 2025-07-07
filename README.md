@@ -177,18 +177,21 @@ la depuración y validación. Esta herramienta ha sido dockerizada, junto con un
   ```
 
 - **Limpiar pruebas**:
+  
   Elimina los repositorios de las pruebas en el servidor git simulado.
   ```shell
   make clean
   ```
 
 - **Actualizar workflows**:
+  
   Carga los workflows en el contenedor de `act`.
   ```shell
   make workflows
   ```
 
 - **Limpiar entorno**:
+
   Elimina las carpetas `target` y el contenedor de `act`.
   ```shell
   make shutdown
