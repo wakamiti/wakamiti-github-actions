@@ -1,0 +1,17 @@
+syncs:
+  - repos:
+      - wakamiti-parent
+      - wakamiti-api
+    files:
+      - src: src/init_release.yml
+        dest: .github/workflows/init_release.yml
+      - src: src/publish.yml
+        dest: .github/workflows/publish.yml
+      - src: src/rebase.yml
+        dest: .github/workflows/rebase.yml
+      - src: src/release.yml
+        dest: .github/workflows/release.yml
+      - src: src/snapshot.yml
+        dest: .github/workflows/snapshot.yml
+      - src: src/validate.yml
+        dest: .github/workflows/validate.yml
