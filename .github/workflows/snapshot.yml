@@ -44,7 +44,6 @@ jobs:
       # Verifies if the current version is a snapshot. If snapshot, sets package
       # identifier in the environment variable
       - name: Check Snapshot
-        working-directory: ${{ inputs.working-directory }}
         run: |
           version=$(mvn -q help:evaluate -Dexpression=project.version -DforceStdout)
           if [[ $version == *-SNAPSHOT ]]; then
@@ -71,7 +70,5 @@ jobs:
       # valid package is detected
       - name: Build and Deploy
         if: env.PACKAGE != ''
-        working-directory: ${{ inputs.working-directory }}
         run: |
-          cat ~/.m2/settings.xml
-          mvn deploy -DskipTests -Dmaven.server=github -Dmaven.snapshots=$PACKAGES_URL
+          mvn deploy -DskipTests 

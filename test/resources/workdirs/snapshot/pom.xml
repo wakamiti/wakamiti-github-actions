@@ -31,6 +31,15 @@
         <url>git://github.com/wakamiti/wakamiti-github-actions.git</url>
     </scm>
 
+    <distributionManagement>
+        <snapshotRepository>
+            <id>github</id>
+            <name>GitHub Packages</name>
+            <url>${env.PACKAGES_URL}</url>
+            <uniqueVersion>false</uniqueVersion>
+        </snapshotRepository>
+    </distributionManagement>
+
     <properties>
         <!-- encoding -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -134,26 +143,20 @@
                             </execution>
                         </executions>
                     </plugin>
+
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>0.7.0</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <autoPublish>true</autoPublish>
+                            <centralBaseUrl>${env.SONATYPE_URL}</centralBaseUrl> <!-- only for test -->
+                        </configuration>
+                    </plugin>
                 </plugins>
             </build>
         </profile>
     </profiles>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.sonatype.central</groupId>
-                <artifactId>central-publishing-maven-plugin</artifactId>
-                <version>0.7.0</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <publishingServerId>${maven.server}</publishingServerId>
-                    <autoPublish>true</autoPublish>
-                    <centralBaseUrl>${env.SONATYPE_URL}</centralBaseUrl> <!-- only for test -->
-                    <centralSnapshotsUrl>${maven.snapshots}</centralSnapshotsUrl>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
 
 </project>
