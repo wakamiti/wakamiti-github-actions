@@ -164,6 +164,10 @@ Para ejecutar pruebas de las GitHub Actions localmente, se utiliza la herramient
 Esta herramienta permite simular la ejecución de flujos de trabajo de GitHub Actions en tu máquina local, facilitando 
 la depuración y validación. Esta herramienta ha sido dockerizada, junto con una serie de servicios simulados.
 
+> [!IMPORTANT]
+> Es necesario poder conectarse a Git mediante clave pública SSH. 
+> [Ver más](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent).
+
 ### Comandos Disponibles
 
 - **Instalar dependencias**:
