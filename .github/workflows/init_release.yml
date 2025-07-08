@@ -24,7 +24,7 @@ on:
       # Boolean indicating if the revision property should be used.
       revision:
         required: true
-        type: boolean
+        type: string
 
       # The type of release (release or hotfix).
       type:
