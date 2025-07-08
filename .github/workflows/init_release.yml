@@ -47,7 +47,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ inputs.branch }}
+          ref: '${{ inputs.branch }}'
 
       # Sets up Java Development Kit (JDK) version 17 using the Temurin
       # distribution.
@@ -57,7 +57,6 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
           cache: maven
-          overwrite-settings: 'false'
 
       # Caches Maven settings file to avoid re-downloading it.
       - name: Cache Maven settings

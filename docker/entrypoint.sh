@@ -63,11 +63,28 @@ docker compose ps -a --services | while read svc; do
   docker compose logs -f "$svc" | grep -viE 'ping|healthcheck' > "/var/log/docker/$svc.log" 2>&1 &
 done
 
+# GPG
+PASSPHRASE=$(openssl rand -base64 -hex 10)
+cat > ~/gpg-batch.conf <<EOF
+Key-Type: RSA
+Key-Length: 4096
+Subkey-Type: RSA
+Subkey-Length: 4096
+Name-Real: ${ACTOR}
+Name-Email: ${ACTOR}@example.com
+Passphrase: $PASSPHRASE
+%commit
+EOF
+gpg --batch --generate-key ~/gpg-batch.conf
+KEY_ID=$(gpg --list-secret-keys --with-colons | grep '^sec' | head -n1 | cut -d: -f5)
+gpg --armor --export-secret-keys --batch --pinentry-mode=loopback --yes --passphrase "$PASSPHRASE" "$KEY_ID" > ~/.gpgkey
+
 # Substitute environment variables in the template
 echo "Configuring act..."
 ACTOR=${ACTOR:-""} \
 TOKEN=${TOKEN:-""} \
 CACHES=${CACHES:-""} \
+PASSPHRASE=${PASSPHRASE:-""} \
 envsubst < .actrc > ~/.actrc
 
 echo "Initialization complete"

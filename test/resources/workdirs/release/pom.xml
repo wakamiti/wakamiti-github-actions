@@ -135,7 +135,9 @@
                             <execution>
                                 <id>sign-artifacts</id>
                                 <phase>install</phase>
-                                <goals><goal>sign</goal></goals>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
                                 <configuration>
                                     <gpgArguments>
                                         <arg>--pinentry-mode</arg>

@@ -5,5 +5,6 @@ workflow=/workflows/${4}.yml
 
 act -vv $1 -C /target/$2 -e /test/resources/events/$3 -W $workflow \
     --env GIT_SERVER_URL="http://${ACTOR}:$(jq -rn --arg v "$TOKEN" '$v|@uri')@gitserver:3000" \
-    --env GITHUB_REPOSITORY="${ACTOR}/$2"
+    --env GITHUB_REPOSITORY="${ACTOR}/$2" \
+    -s GPG_SECRET_KEY="$(cat ~/.gpgkey)"
 

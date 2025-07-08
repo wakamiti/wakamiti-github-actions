@@ -14,7 +14,7 @@ COPY docker /docker
 COPY target/.ssh /root/.ssh
 
 # Install dependencies and act, and prepare volume directories
-RUN apk add --no-cache curl bash git gettext jq yq rsync && \
+RUN apk add --no-cache curl bash git gnupg gettext jq yq rsync && \
     ACT_VERSION=$(curl -s https://api.github.com/repos/nektos/act/releases/latest | grep tag_name | cut -d '"' -f 4) && \
     curl -Lo act.tar.gz https://github.com/nektos/act/releases/download/${ACT_VERSION}/act_Linux_x86_64.tar.gz && \
     tar -xf act.tar.gz && \

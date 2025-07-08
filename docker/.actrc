@@ -17,7 +17,7 @@
 --secret API_TOKEN=abc123
 --secret CENTRAL_USER=${ACTOR}
 --secret CENTRAL_PASSWORD=${TOKEN}
---secret-file .secrets
+--secret GPG_SECRET_KEY_PASSWORD=${PASSPHRASE}
 
 --network act-test-network
 --action-cache-path ${CACHES}
