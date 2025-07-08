@@ -70,13 +70,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MAVEN_USERNAME: ${{ secrets.CENTRAL_USER }}
           MAVEN_CENTRAL_TOKEN: ${{ secrets.CENTRAL_PASSWORD }}
-#          MAVEN_GPG_KEY: ${{ secrets.GPG_SECRET_KEY }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_SECRET_KEY_PASSWORD }}
-        run: |
-          echo "PASSPHRASE: $MAVEN_GPG_PASSPHRASE"
-          echo "KEY: ${{ secrets.GPG_SECRET_KEY }}"
-          gpg --list-secret-keys --keyid-format LONG
-          mvn deploy -Prelease -DskipTests
+        run: mvn deploy -Prelease -DskipTests
 
       # Extracts release data from the changelog and prepares the release body.
       - name: Recovery release data
