@@ -18,7 +18,6 @@ for %%I in (.) do set "CUR_DIR=%%~nxI"
 if "%~1"=="" (
     CALL :install
     CALL :test
-    CALL :clean
     CALL :shutdown
 ) else (
     CALL :%*
@@ -112,8 +111,4 @@ EXIT /B 0
     timeout /t 1 >nul
     echo act container installed
 
-EXIT /B 0
-
-:prueba
-    echo test
 EXIT /B 0
