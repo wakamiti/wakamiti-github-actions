@@ -5,6 +5,8 @@ syncs:
     files:
       - src: src/init_release.yml
         dest: .github/workflows/init_release.yml
+      - src: src/init_hotfix.yml
+        dest: .github/workflows/init_hotfix.yml
       - src: src/publish.yml
         dest: .github/workflows/publish.yml
       - src: src/rebase.yml

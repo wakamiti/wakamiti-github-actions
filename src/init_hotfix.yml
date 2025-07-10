@@ -1,12 +1,9 @@
-name: Create Release Branch
+name: Create Hotfix Branch
 on:
   workflow_dispatch:
-  push:
-    branches: [develop]
 jobs:
   config_maven:
     name: Maven Configuration
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '#ready')
     uses: wakamiti/wakamiti-github-actions/.github/workflows/maven.yml@main
     secrets: inherit
   status:
@@ -14,12 +11,11 @@ jobs:
     secrets: inherit
     needs: config_maven
     with:
-      branch: develop
-  init_release:
-    uses: wakamiti/wakamiti-github-actions/.github/workflows/init_release.yml@main
+      branch: main
+  init_hotfix:
+    uses: wakamiti/wakamiti-github-actions/.github/workflows/init_hotfix.yml@main
     secrets: inherit
     needs: [config_maven, status]
     with:
-      changelog: ${{ needs.status.outputs.changelog }}
       version: ${{ needs.status.outputs.version }}
       revision: ${{ needs.status.outputs.revision }}

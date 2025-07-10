@@ -1,0 +1,103 @@
+#
+# This workflow automates the initialization of a new hotfix branch for a
+# Maven/Java project.
+#
+on:
+  workflow_call:
+    inputs:
+
+      # The current version.
+      version:
+        required: true
+        type: string
+
+      # Boolean indicating if the revision property should be used.
+      revision:
+        required: true
+        type: string
+
+jobs:
+  init_hotfix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+
+      # Checks out the repository code using the main branch
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      # Sets up Java Development Kit (JDK) version 17 using the Temurin
+      # distribution.
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: maven
+
+      # Caches Maven settings file to avoid re-downloading it.
+      - name: Cache Maven settings
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/settings.xml
+          key: settings-xml
+
+      # Caches Maven dependencies to reduce build time.
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: maven-
+
+      # Validates version requirements, ensures the current version is not a
+      # SNAPSHOT and increases the patch version from the latest version.
+      - name: Check version
+        run: |
+          if [[ ${{ inputs.version }} =~ -SNAPSHOT$ ]]; then
+            echo "::error::Current version ${{ inputs.version }} is a snapshot."
+            exit 1
+          fi
+          IFS='.' read -r MAJOR MINOR PATCH <<< "${{ inputs.version }}"
+          version="${MAJOR}.${MINOR}.$((PATCH + 1))"
+          echo "VERSION=$version" >> $GITHUB_ENV
+
+      # Initializes mandatory Git configuration and creates a new branch for the
+      # hotfix.
+      - name: Initialize mandatory git config
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "noreply@github.com"
+          git checkout -b "hotfix/v${{ env.VERSION }}"
+
+      # Updates the version in the pom.xml
+      - name: Change version
+        env:
+          REVISION: ${{ inputs.revision }}
+        run: |
+          if [[ ${REVISION} == 'true' ]]; then
+            mvn versions:set-property -Dproperty=revision -DnewVersion=${{ env.VERSION }}-SNAPSHOT -DgenerateBackupPoms=false
+          else
+            mvn versions:set -DnewVersion=${{ env.VERSION }}-SNAPSHOT -DgenerateBackupPoms=false
+          fi
+
+      # Commits the version changes and pushes the new branch
+      - name: Commit and push
+        run: |
+          git add .
+          git commit --message "Prepare for the next patch iteration v${{ env.VERSION }}"
+          git push origin hotfix/v${{ env.VERSION }}
+
+      # Rollback changes in case of failure.
+      # This step checks if the new branch created during the workflow exists.
+      # If it does, it switches back to the base branch, deletes the new branch
+      # locally, and removes it from the remote repository to ensure a clean state.
+      - name: Rollback changes
+        if: failure()
+        run: |
+          if git show-ref --quiet refs/heads/hotfix/v${{ env.VERSION }}; then
+            git checkout main
+            git branch -D hotfix/v${{ env.VERSION }}
+            git push origin --delete hotfix/v${{ env.VERSION }} || true
+          fi

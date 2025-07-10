@@ -6,11 +6,6 @@ on:
   workflow_call:
     inputs:
 
-      # The base branch to create the release/hotfix from.
-      branch:
-        required: true
-        type: string
-
       # The changelog file name.
       changelog:
         required: true
@@ -26,11 +21,6 @@ on:
         required: true
         type: string
 
-      # The type of release (release or hotfix).
-      type:
-        required: true
-        type: string
-
 jobs:
   init_release:
     runs-on: ubuntu-latest
@@ -41,13 +31,11 @@ jobs:
       REVISION: ${{ inputs.revision }}
     steps:
 
-      # Checks out the full history of repository code using the specified
-      # branch provided as input.
+      # Checks out the repository code using the develop branch.
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-          ref: '${{ inputs.branch }}'
+          ref: develop
 
       # Sets up Java Development Kit (JDK) version 17 using the Temurin
       # distribution.
@@ -99,7 +87,7 @@ jobs:
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email noreply@github.com
-          git checkout -b ${{ inputs.type }}/v${{ env.NEW_VERSION }} ${{ inputs.branch }}
+          git checkout -b release/v${{ env.NEW_VERSION }}
 
       # Updates the version in the pom.xml and changelog, and extracts the
       # changelog content for the pull request
@@ -114,14 +102,13 @@ jobs:
           body=$(sed -n '/^## \[unreleased\]/,/^## \[/p' ${{ env.CHANGELOG }} | sed '/^## \[/d' \
             | sed ':a;N;$!ba;s/\n/\\n/g')
           sed -i "s/\[unreleased\]/[${{ env.NEW_VERSION }}] - $(date +%F)/" ${{ env.CHANGELOG }}
-          echo "PR_BODY=$body" >> $GITHUB_ENV
 
       # Commits the version changes and pushes the new branch
       - name: Commit and push
         run: |
           git add .
-          git commit --message "$(printf "Prepare ${{ inputs.type }} ${{ env.NEW_VERSION }}\n\n#ready")"
-          git push origin ${{ inputs.type }}/v${{ env.NEW_VERSION }}
+          git commit --message "$(printf "Prepare release v${{ env.NEW_VERSION }}\n\n#ready")"
+          git push origin release/v${{ env.NEW_VERSION }}
 
       # Rollback changes in case of failure.
       # This step checks if the new branch created during the workflow exists.
@@ -130,8 +117,8 @@ jobs:
       - name: Rollback changes
         if: failure()
         run: |
-          if git show-ref --quiet refs/heads/${{ inputs.type }}/v${{ env.NEW_VERSION }}; then
-            git checkout ${{ inputs.branch }}
-            git branch -D ${{ inputs.type }}/v${{ env.NEW_VERSION }}
-            git push origin --delete ${{ inputs.type }}/v${{ env.NEW_VERSION }} || true
+          if git show-ref --quiet refs/heads/release/v${{ env.NEW_VERSION }}; then
+            git checkout develop
+            git branch -D release/v${{ env.NEW_VERSION }}
+            git push origin --delete release/v${{ env.NEW_VERSION }} || true
           fi

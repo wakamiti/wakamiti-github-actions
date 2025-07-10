@@ -16,16 +16,23 @@ teardown() {
   branch="release/v0.0.1"
   cd /target/$1
   git checkout $branch
-  git log --stat
-  if ! git log -1 --pretty=%B | grep -q "#ready"; then
-    echo ERROR: commit message does not contain "#ready"
-    exit 1
+  if ! git log -1 --pretty=%B | sed -n '/Prepare release v0.0.1/,/#ready/p'; then
+      echo ERROR: commit message does not contain "Prepare release v0.0.1" or "#ready"
+      exit 1
   fi
   hash1=$(git merge-base $branch develop)
   hash2=$(git rev-parse develop)
   if [ ! "$hash1" = "$hash2" ]; then
-    echo "ERROR: the branch '$branch' does not originate from 'develop'"
-    exit 1
+      echo "ERROR: the branch '$branch' does not originate from 'develop'"
+      exit 1
+  fi
+  if ! cat CHANGELOG.md | grep -q "\[0.0.1\] \- $(date +%F)"; then
+      echo "ERROR: the changelog file does not contain release version"
+      exit 1
+  fi
+  if ! cat pom.xml | grep -q "<version>0.0.1</version>"; then
+      echo "ERROR: the pom file does not contain release version"
+      exit 1
   fi
 }
 

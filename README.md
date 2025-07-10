@@ -60,6 +60,8 @@ asegurando consistencia y eficiencia a través de los repositorios.
 
    Este workflow se activa al hacer push a la rama `develop` con un commit que contiene `#ready` o mediante 
    ejecución manual. Valida la versión y se crea la correspondiente rama `release` a partir del código de `develop`.
+   En la rama `release` se cambia la versión del pom de `SNAPSHOT` a release, y el bloque `[unreleased]` del changelog 
+   a la versión correspondiente.
     ```mermaid
     flowchart LR
         D1(("push"))
@@ -69,12 +71,14 @@ asegurando consistencia y eficiencia a través de los repositorios.
             S1["Configurar maven *"]
             S2["Validar versión"]
             S3["Crear rama release"]
+            S4["Actualiza versión"]
+            S5["Push con commit #ready"]
         end
     
         D1 -- develop 
               (commit #ready) --> SUB1
         D2 --> SUB1
-        S1 --> S2 --> S3 
+        S1 --> S2 --> S3 --> S4 --> S5
     ```
 
 4. **Crear Pull Request**
@@ -124,15 +128,15 @@ asegurando consistencia y eficiencia a través de los repositorios.
 
 6. **Iniciar Hotfix**
 
-   Este workflow es una variante del workflow "Preparar Release" que se activa manualmente para crear una rama de hotfix
-   a partir de la rama `main`. Validan y prepara la versión, y creando la rama de `hotfix` correspondiente.
+   Este workflow se activa manualmente para crear una rama de hotfix a partir de la rama `main`. Valida la versión 
+   actual y prepara la nueva versión incrementando el patch, creando la rama de `hotfix` correspondiente.
     ```mermaid
     flowchart LR
         D1(("workflow_dispatch"))
         subgraph SUB1 [ ]
             direction TB
             S1["Validar versión"]
-            S2["Preparar versión"]
+            S2["Preparar nueva versión"]
             S3["Crear rama hotfix"]
         end
         
