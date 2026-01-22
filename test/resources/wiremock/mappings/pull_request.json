@@ -26,6 +26,7 @@
     "jsonBody": {
       "id": 1,
       "title": "Release version v0.0.1",
+      "number": 1347,
       "user": {
         "login": "usuario",
         "id": 1

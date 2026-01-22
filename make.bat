@@ -53,6 +53,7 @@ EXIT /B 0
 :test
     ::
 
+    CALL :clean
     docker exec -ti act ./run %*
 
 EXIT /B 0

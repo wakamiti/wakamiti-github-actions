@@ -2,6 +2,7 @@ syncs:
   - repos:
       - wakamiti-parent
       - wakamiti-api
+      - wakamiti-service
     files:
       - src: src/init_release.yml
         dest: .github/workflows/init_release.yml
@@ -9,8 +10,6 @@ syncs:
         dest: .github/workflows/init_hotfix.yml
       - src: src/publish.yml
         dest: .github/workflows/publish.yml
-      - src: src/rebase.yml
-        dest: .github/workflows/rebase.yml
       - src: src/release.yml
         dest: .github/workflows/release.yml
       - src: src/snapshot.yml

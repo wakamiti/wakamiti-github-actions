@@ -144,20 +144,6 @@ asegurando consistencia y eficiencia a través de los repositorios.
         S1 --> S2 --> S3
     ```
 
-7. **Rebase Ramas**
-   
-   Este workflow se activa al hacer push a la rama `main`. Se encarga de hacer rebase de las ramas `develop`, 
-   `release` y `hotfix` sobre la rama `main`.
-   ```mermaid
-     flowchart LR
-         PUSH(("push"))
-         subgraph SUB1[ ]
-            direction TB
-            V1["Rebase ramas"]
-         end
-      
-         PUSH -- main --> SUB1
-   ```
 
 (*): cacheable
 

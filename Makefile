@@ -30,7 +30,7 @@ install: workflows
 		$(ACT_IMAGE)
 	$(MAKE) check
 
-test:
+test: clean
 	docker exec -ti $(ACT_CONTAINER) ./run
 
 list:
@@ -42,7 +42,6 @@ clean:
 shutdown: clean
 	docker exec -ti $(ACT_CONTAINER) docker compose down || true
 	docker rm -f -v $(ACT_CONTAINER)
-	docker system prune -f
 	rm -rf target
 
 workflows:

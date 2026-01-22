@@ -61,6 +61,6 @@ jobs:
             -F head="${{ env.HEAD }}" \
             -F title="${{ env.TITLE }}" \
             -F body="${{ env.BODY }}" \
-            --jq '.id')
+            --jq '.number')
           data=$(gh api /orgs/$ORG/teams/$TEAM/members | jq -r 'map(.login)')
           echo '{ "reviewers":$data }' | gh api -X POST /repos/$REPO/pulls/$PR/requested_reviewers --input -
