@@ -1,7 +1,10 @@
 
 --platform ubuntu-latest=act-with-gh
+--platform windows-latest=act-with-gh
+--platform macos-latest=act-with-gh
 
 --var PACKAGES_URL=http://nexus:8081/repository/maven-snapshots
+--var SONAR_HOST_URL=http://mockserver:8080
 
 --env SONATYPE_URL=http://mockserver:8080/repository/maven-internal
 --env GH_HOST=mockserver:8443

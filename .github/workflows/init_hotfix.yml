@@ -27,13 +27,13 @@ jobs:
         with:
           ref: main
 
-      # Sets up Java Development Kit (JDK) version 17 using the Temurin
+      # Sets up Java Development Kit (JDK) version 25 using the Oracle
       # distribution.
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: 'oracle'
+          java-version: '25'
           cache: maven
 
       # Caches Maven settings file to avoid re-downloading it.

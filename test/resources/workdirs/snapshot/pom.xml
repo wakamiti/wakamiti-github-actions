@@ -46,14 +46,69 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
         <!-- build versions -->
-        <java.version>17</java.version>
+        <java.version>25</java.version>
         <maven.compiler.release>${java.version}</maven.compiler.release>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
+
+        <jri.modules>java.base</jri.modules>
+        <jri.output>${project.basedir}${file.separator}.jri</jri.output>
     </properties>
 
 
     <profiles>
+        <profile>
+            <id>jlink</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                        <version>3.6.1</version>
+                        <executions>
+                            <execution>
+                                <id>flatten-jri-modules</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>regex-property</goal>
+                                </goals>
+                                <configuration>
+                                    <name>jri.modules</name>
+                                    <value>${jri.modules}</value>
+                                    <regex>[\r\n\t ]+</regex>
+                                    <replacement></replacement>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.6.3</version>
+                        <executions>
+                            <execution>
+                                <id>jlink</id>
+                                <goals><goal>exec</goal></goals>
+                                <configuration>
+                                    <executable>${java.home}${file.separator}bin${file.separator}jlink</executable>
+                                    <arguments>
+                                        <argument>--strip-debug</argument>
+                                        <argument>--no-header-files</argument>
+                                        <argument>--no-man-pages</argument>
+                                        <argument>--compress=2</argument>
+                                        <argument>--add-modules</argument>
+                                        <argument>${jri.modules.arg}</argument>
+                                        <argument>--output</argument>
+                                        <argument>${jri.output}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
         <profile>
             <id>release</id>
 
