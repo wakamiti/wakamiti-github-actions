@@ -37,6 +37,10 @@ EXIT /B 0
     docker run -d --privileged --name act -w /docker ^
         -e DOCKER_DRIVER=overlay2 ^
         -e DOCKER_TLS_CERTDIR= ^
+        --cpus="2.0" ^
+        --memory="4g" ^
+        --memory-swap="4g" ^
+        --pids-limit=256 ^
         -v "%cd%\src:/workflows" ^
         -v "%cd%\test:/test" ^
         -v "%cd%\target\caches:/caches" ^
