@@ -20,9 +20,9 @@ install: workflows
 		-e DOCKER_DRIVER=overlay2 \
 		-e DOCKER_TLS_CERTDIR= \
 		--cpus="2.0" \
-        --memory="4g" \
-        --memory-swap="4g" \
-        --pids-limit=256 \
+        --memory="6g" \
+        --memory-swap="6g" \
+        --pids-limit=1024 \
 		-v $(PWD)/src:/workflows \
 		-v $(PWD)/test:/test \
 		-v $(PWD)/target/caches:/caches \
