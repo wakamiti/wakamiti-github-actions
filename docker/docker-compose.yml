@@ -70,6 +70,8 @@ services:
       --port 8080
       --https-port 8443
       --https-keystore /certs/mockserver.jks
+    ports:
+      - "8080:8080"
     volumes:
       - /test/resources/wiremock:/home/wiremock
     restart: unless-stopped

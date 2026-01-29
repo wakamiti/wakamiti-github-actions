@@ -2,16 +2,16 @@ syncs:
   - repos:
       - wakamiti-parent
       - wakamiti-api
-      - wakamiti-service
+      - wakamiti-runtime
     files:
-      - src: src/init_release.yml
-        dest: .github/workflows/init_release.yml
-      - src: src/init_hotfix.yml
-        dest: .github/workflows/init_hotfix.yml
-      - src: src/publish.yml
-        dest: .github/workflows/publish.yml
-      - src: src/release.yml
-        dest: .github/workflows/release.yml
+#      - src: src/init_release.yml
+#        dest: .github/workflows/init_release.yml
+#      - src: src/init_hotfix.yml
+#        dest: .github/workflows/init_hotfix.yml
+#      - src: src/publish.yml
+#        dest: .github/workflows/publish.yml
+#      - src: src/release.yml
+#        dest: .github/workflows/release.yml
       - src: src/snapshot.yml
         dest: .github/workflows/snapshot.yml
       - src: src/validate.yml

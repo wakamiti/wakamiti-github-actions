@@ -12,11 +12,15 @@ setup() {
   echo "setup"
   cd /target/$1
   git checkout -b hotfix/v0.0.1
+  git commit --allow-empty -m "#ready"
   git push --set-upstream local hotfix/v0.0.1
 }
 
 teardown() {
-  :
+  count=$(curl -s -X POST "http://localhost:8080/__admin/requests/count" \
+    -H "Content-Type: application/json" \
+    -d '{ "method": "POST", "urlPattern": "/api/v3/repos/.*/.*/pulls" }' | jq -r '.count')
+  [ "$count" -ge 1 ] || { echo "ERROR: Pull Request not found"; exit 1; }
 }
 
 # --------------------------
