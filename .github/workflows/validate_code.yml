@@ -70,9 +70,13 @@ jobs:
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
 
+      - name: Create binaries
+        if: ${{ hashFiles('**/src/**') != '' }}
+        run: mvn -Pjlink initialize
+          
       # Builds the project and runs tests using Maven.
       - name: Build & Test
-        run: mvn -Pjlink initialize && mvn -B clean install
+        run: mvn -B clean install
 
       # Performs SonarQube analysis if the 'analyze' input is true and there are
       # changes in the source files.
