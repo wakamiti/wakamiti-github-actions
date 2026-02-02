@@ -61,12 +61,19 @@ jobs:
           key: maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: maven-
 
+      # Calculates hash of wakamiti-parent pom from local maven repo
+      - name: Calculate Parent POM Hash
+        id: parent-hash
+        run: |
+          HASH=$(find ~/.m2/repository -name "wakamiti-parent-*.pom" -type f -exec sha256sum {} + 2>/dev/null | awk '{print $1}' | sort | sha256sum | awk '{print $1}')
+          echo "hash=${HASH:-initial}" >> $GITHUB_OUTPUT
+
       - name: Cache Java JRI
         uses: actions/cache@v4
         if: ${{ hashFiles('**/src/**') != '' }}
         with:
           path: '**/.jri'
-          key: ${{ runner.os }}-jri-${{ hashFiles('~/.m2/repository/**/wakamiti-parent/**/pom.xml') }}
+          key: ${{ runner.os }}-jri-${{ steps.parent-hash.outputs.hash }}
           restore-keys: ${{ runner.os }}-jri-
 
       - name: Cache Go binaries
