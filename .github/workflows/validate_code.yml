@@ -85,10 +85,6 @@ jobs:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
-
-      - name: Create binaries
-        if: ${{ hashFiles('**/src/**') != '' }}
-        run: mvn -Pjlink initialize
           
       # Builds the project and runs tests using Maven.
       - name: Build & Test
