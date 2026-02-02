@@ -61,6 +61,22 @@ jobs:
           key: maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: maven-
 
+      - name: Cache Java JRI
+        uses: actions/cache@v4
+        if: ${{ hashFiles('**/src/**') != '' }}
+        with:
+          path: '**/.jri'
+          key: ${{ runner.os }}-jri-${{ hashFiles('**/wakamiti-parent/**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-jri-
+
+      - name: Cache Go binaries
+        uses: actions/cache@v4
+        if: ${{ hashFiles('**/src/**') != '' }}
+        with:
+          path: '**/.go'
+          key: ${{ runner.os }}-jri-${{ hashFiles('**/go.mod') }}
+          restore-keys: ${{ runner.os }}-jri-
+
       # Caches SonarCloud dependencies to speed up the analysis process.
       - name: Cache SonarCloud packages
         uses: actions/cache@v4
