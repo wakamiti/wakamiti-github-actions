@@ -66,7 +66,7 @@ jobs:
         if: ${{ hashFiles('**/src/**') != '' }}
         with:
           path: '**/.jri'
-          key: ${{ runner.os }}-jri-${{ hashFiles('**/wakamiti-parent/**/pom.xml') }}
+          key: ${{ runner.os }}-jri-${{ hashFiles('~/.m2/repository/**/wakamiti-parent/**/pom.xml') }}
           restore-keys: ${{ runner.os }}-jri-
 
       - name: Cache Go binaries
@@ -74,8 +74,8 @@ jobs:
         if: ${{ hashFiles('**/src/**') != '' }}
         with:
           path: '**/.go'
-          key: ${{ runner.os }}-jri-${{ hashFiles('**/go.mod') }}
-          restore-keys: ${{ runner.os }}-jri-
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.mod') }}
+          restore-keys: ${{ runner.os }}-go-
 
       # Caches SonarCloud dependencies to speed up the analysis process.
       - name: Cache SonarCloud packages

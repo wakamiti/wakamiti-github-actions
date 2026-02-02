@@ -40,6 +40,22 @@ jobs:
           key: maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: maven-
 
+      - name: Cache Java JRI
+        uses: actions/cache@v4
+        if: ${{ hashFiles('**/src/**') != '' }}
+        with:
+          path: '**/.jri'
+          key: ${{ runner.os }}-jri-${{ hashFiles('~/.m2/repository/**/wakamiti-parent/**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-jri-
+
+      - name: Cache Go binaries
+        uses: actions/cache@v4
+        if: ${{ hashFiles('**/src/**') != '' }}
+        with:
+          path: '**/.go'
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.mod') }}
+          restore-keys: ${{ runner.os }}-go-
+
       # Verifies if the current version is a snapshot. If snapshot, sets package
       # identifier in the environment variable
       - name: Check Snapshot
