@@ -46,7 +46,6 @@ jobs:
         with:
           distribution: 'oracle'
           java-version: '25'
-          cache: maven
 
       # Caches Maven settings file to avoid re-downloading it.
       - name: Cache Maven settings
@@ -84,4 +83,4 @@ jobs:
           else
             echo "El tag v${TAG} no existe."
           fi
-          mvn verify -Prelease
+          ./mvnw verify -Prelease

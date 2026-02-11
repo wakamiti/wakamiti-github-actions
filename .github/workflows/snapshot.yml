@@ -23,7 +23,6 @@ jobs:
         with:
           distribution: 'oracle'
           java-version: '25'
-          cache: maven
 
       # Caches Maven settings file to avoid re-downloading it.
       - name: Cache Maven settings
@@ -67,10 +66,10 @@ jobs:
       # identifier in the environment variable
       - name: Check Snapshot
         run: |
-          version=$(mvn -q help:evaluate -Dexpression=project.version -DforceStdout)
+          version=$(./mvnw -q help:evaluate -Dexpression=project.version -DforceStdout)
           if [[ $version == *-SNAPSHOT ]]; then
-            groupId=$(mvn -q help:evaluate -Dexpression=project.groupId -DforceStdout)
-            artifactId=$(mvn -q help:evaluate -Dexpression=project.artifactId -DforceStdout)
+            groupId=$(./mvnw -q help:evaluate -Dexpression=project.groupId -DforceStdout)
+            artifactId=$(./mvnw -q help:evaluate -Dexpression=project.artifactId -DforceStdout)
             echo "PACKAGE=${groupId}.${artifactId}" >> $GITHUB_ENV
           else
             echo "::warning::non-snapshot version $version deployment ignored"
@@ -93,4 +92,4 @@ jobs:
       - name: Build and Deploy
         if: env.PACKAGE != ''
         run: |
-          mvn deploy -DskipTests 
+          ./mvnw deploy -DskipTests 
