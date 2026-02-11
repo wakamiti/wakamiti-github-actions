@@ -44,7 +44,6 @@ jobs:
         with:
           distribution: 'oracle'
           java-version: '25'
-          cache: maven
 
       # Caches Maven settings file to avoid re-downloading it.
       - name: Cache Maven settings
@@ -95,9 +94,9 @@ jobs:
         id: change-version
         run: |
           if [[ ${REVISION} == 'true' ]]; then
-            mvn versions:set-property -Dproperty=revision -DnewVersion=${{ env.NEW_VERSION }} -DgenerateBackupPoms=false
+            ./mvnw versions:set-property -Dproperty=revision -DnewVersion=${{ env.NEW_VERSION }} -DgenerateBackupPoms=false
           else
-            mvn versions:set -DnewVersion=${{ env.NEW_VERSION }} -DgenerateBackupPoms=false
+            ./mvnw versions:set -DnewVersion=${{ env.NEW_VERSION }} -DgenerateBackupPoms=false
           fi
           body=$(sed -n '/^## \[unreleased\]/,/^## \[/p' ${{ env.CHANGELOG }} | sed '/^## \[/d' \
             | sed ':a;N;$!ba;s/\n/\\n/g')

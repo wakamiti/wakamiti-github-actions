@@ -48,7 +48,6 @@ jobs:
         with:
           distribution: 'oracle'
           java-version: '25'
-          cache: maven
 
       # Caches Maven settings file to avoid re-downloading it.
       - name: Cache Maven settings
@@ -87,8 +86,8 @@ jobs:
             echo "::error::${CHANGELOG} file does not exist."
             exit 1
           fi
-          version=$(mvn -q help:evaluate -Dexpression=project.version -DforceStdout)
-          if [[ $version == $(mvn -q help:evaluate -Dexpression=revision -DforceStdout) ]]; then
+          version=$(./mvnw -q help:evaluate -Dexpression=project.version -DforceStdout)
+          if [[ $version == $(./mvnw -q help:evaluate -Dexpression=revision -DforceStdout) ]]; then
             echo "REVISION=true" >> $GITHUB_OUTPUT
           else
             echo "REVISION=false" >> $GITHUB_OUTPUT

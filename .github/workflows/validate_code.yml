@@ -44,7 +44,6 @@ jobs:
         with:
           distribution: 'oracle'
           java-version: '25'
-          cache: maven
 
       # Caches Maven settings file to avoid re-downloading it.
       - name: Cache Maven settings
@@ -67,12 +66,11 @@ jobs:
         run: |
           HASH=$(find ~/.m2/repository -name "wakamiti-parent-*.pom" -type f -exec sha256sum {} + 2>/dev/null | awk '{print $1}' | sort | sha256sum | awk '{print $1}')
           echo "hash=${HASH:-initial}" >> $GITHUB_OUTPUT
-
       - name: Cache Java JRI
         uses: actions/cache@v4
         if: ${{ hashFiles('**/src/**') != '' }}
         with:
-          path: '**/.jri'
+          path: '**/.jri*'
           key: ${{ runner.os }}-jri-${{ steps.parent-hash.outputs.hash }}
           restore-keys: ${{ runner.os }}-jri-
 
@@ -80,7 +78,7 @@ jobs:
         uses: actions/cache@v4
         if: ${{ hashFiles('**/src/**') != '' }}
         with:
-          path: '**/.go'
+          path: '**/.go/go*'
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.mod') }}
           restore-keys: ${{ runner.os }}-go-
 
@@ -95,7 +93,7 @@ jobs:
           
       # Builds the project and runs tests using Maven.
       - name: Build & Test
-        run: mvn -B clean install
+        run: ./mvnw -B clean install
 
       # Performs SonarQube analysis if the 'analyze' input is true and there are
       # changes in the source files.
@@ -105,7 +103,7 @@ jobs:
           SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          mvn -B -ntp org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+          ./mvnw -B -ntp org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
             -Dsonar.host.url=$SONAR_HOST_URL \
             -Dsonar.organization=wakamiti \
             -Dsonar.projectKey=${{ github.event.repository.name }} \
