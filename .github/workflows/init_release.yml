@@ -44,6 +44,7 @@ jobs:
         with:
           distribution: 'oracle'
           java-version: '25'
+          cache: 'maven'
 
       # Caches Maven settings file to avoid re-downloading it.
       - name: Cache Maven settings

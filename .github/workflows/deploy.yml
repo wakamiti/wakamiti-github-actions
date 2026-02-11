@@ -40,6 +40,7 @@ jobs:
         with:
           distribution: 'oracle'
           java-version: '25'
+          cache: 'maven'
           server-id: central
           server-username: MAVEN_USERNAME
           server-password: MAVEN_CENTRAL_TOKEN
