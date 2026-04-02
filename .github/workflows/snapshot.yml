@@ -101,15 +101,43 @@ jobs:
 
       # Deletes old versions of the packages from Maven repository. Only runs if
       # valid package names are detected
+      - name: Filter existing packages
+        if: env.PACKAGES != ''
+        run: |
+          mapfile -t existing_packages < <(
+            while IFS= read -r package; do
+              [[ -z "$package" ]] && continue
+              status=$(curl -s -o /dev/null -w "%{http_code}" \
+                -H "Authorization: Bearer $GITHUB_TOKEN" \
+                -H "Accept: application/vnd.github+json" \
+                "https://api.github.com/orgs/wakamiti/packages/maven/$package")
+              if [[ "$status" == "200" ]]; then
+                echo "$package"
+              else
+                echo "::notice::Skipping package '$package' (not found in GitHub Packages, HTTP $status)" >&2
+              fi
+            done <<< "${PACKAGES}"
+          )
+
+          if [[ ${#existing_packages[@]} -gt 0 ]]; then
+            {
+              echo "PACKAGES_TO_DELETE<<EOF"
+              printf '%s\n' "${existing_packages[@]}"
+              echo "EOF"
+            } >> "$GITHUB_ENV"
+          else
+            echo "::notice::No existing packages found to delete"
+          fi
+
       - name: Remove old packages
         uses: smartsquaregmbh/delete-old-packages@v0.8.1
-        if: env.PACKAGES != ''
+        if: env.PACKAGES_TO_DELETE != ''
         continue-on-error: true
         with:
           organization: wakamiti
           type: maven
           keep: 0
-          names: ${{ env.PACKAGES }}
+          names: ${{ env.PACKAGES_TO_DELETE }}
 
       # Builds and deploys the snapshot to Maven repository. Only runs if valid
       # package names are detected
