@@ -63,34 +63,57 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.mod') }}
           restore-keys: ${{ runner.os }}-go-
 
-      # Verifies if the current version is a snapshot. If snapshot, sets package
-      # identifier in the environment variable
+      # Verifies if the current version is a snapshot. If snapshot, collects
+      # package identifiers for deployable modules in the reactor.
       - name: Check Snapshot
         run: |
           version=$(./mvnw -q help:evaluate -Dexpression=project.version -DforceStdout)
           if [[ $version == *-SNAPSHOT ]]; then
-            groupId=$(./mvnw -q help:evaluate -Dexpression=project.groupId -DforceStdout)
-            artifactId=$(./mvnw -q help:evaluate -Dexpression=project.artifactId -DforceStdout)
-            echo "PACKAGE=${groupId}.${artifactId}" >> $GITHUB_ENV
+            mapfile -t packages < <(
+              ./mvnw -q org.codehaus.mojo:exec-maven-plugin:3.6.1:exec \
+                -Dexec.executable=echo \
+                -Dexec.args='${project.groupId}.${project.artifactId}|${project.packaging}|${maven.deploy.skip}' \
+              | awk -F'|' '
+                  BEGIN { OFS="" }
+                  {
+                    gsub(/^[[:space:]]+|[[:space:]]+$/, "", $1)
+                    gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2)
+                    gsub(/^[[:space:]]+|[[:space:]]+$/, "", $3)
+                    skip = tolower($3)
+                    if (NF == 3 && $1 ~ /^[[:alnum:]_.-]+\.[[:alnum:]_.-]+$/ && skip != "true") print $1
+                  }
+                ' \
+              | sort -u
+            )
+
+            if [[ ${#packages[@]} -gt 0 ]]; then
+              {
+                echo "PACKAGES<<EOF"
+                printf '%s\n' "${packages[@]}"
+                echo "EOF"
+              } >> "$GITHUB_ENV"
+            else
+              echo "::warning::snapshot version detected but no deployable packages found in reactor"
+            fi
           else
             echo "::warning::non-snapshot version $version deployment ignored"
           fi
 
-      # Deletes old versions of the package from Maven repository. Only runs if
-      # a valid package is detected
+      # Deletes old versions of the packages from Maven repository. Only runs if
+      # valid package names are detected
       - name: Remove old packages
         uses: smartsquaregmbh/delete-old-packages@v0.8.1
-        if: env.PACKAGE != ''
+        if: env.PACKAGES != ''
         continue-on-error: true
         with:
           organization: wakamiti
           type: maven
           keep: 0
-          names: ${{ env.PACKAGE }}
+          names: ${{ env.PACKAGES }}
 
-      # Builds and deploys the snapshot to Maven repository. Only runs if a
-      # valid package is detected
+      # Builds and deploys the snapshot to Maven repository. Only runs if valid
+      # package names are detected
       - name: Build and Deploy
-        if: env.PACKAGE != ''
+        if: env.PACKAGES != ''
         run: |
           ./mvnw deploy -DskipTests 
