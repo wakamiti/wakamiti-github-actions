@@ -1,8 +1,10 @@
 syncs:
   - repos:
       - wakamiti-parent
-      - wakamiti-api
+      - wakamiti-platform
       - wakamiti-runtime
+      - wakamiti-commons
+      - wakamiti-core
     files:
 #      - src: src/init_release.yml
 #        dest: .github/workflows/init_release.yml
