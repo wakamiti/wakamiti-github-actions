@@ -39,7 +39,7 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '25'
-          cache: maven
+          cache: 'maven'
           server-id: central
           server-username: MAVEN_USERNAME
           server-password: MAVEN_CENTRAL_TOKEN
@@ -53,6 +53,29 @@ jobs:
           path: ~/.m2/repository
           key: maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: maven-
+
+      # Calculates hash of wakamiti-parent pom from local maven repo
+      - name: Calculate Parent POM Hash
+        id: parent-hash
+        run: |
+          HASH=$(find ~/.m2/repository -name "wakamiti-parent-*.pom" -type f -exec sha256sum {} + 2>/dev/null | awk '{print $1}' | sort | sha256sum | awk '{print $1}')
+          echo "hash=${HASH:-initial}" >> $GITHUB_OUTPUT
+
+      - name: Cache Java JRI
+        uses: actions/cache@v4
+        if: ${{ hashFiles('**/src/**') != '' }}
+        with:
+          path: '**/.jri*'
+          key: ${{ runner.os }}-jri-${{ steps.parent-hash.outputs.hash }}
+          restore-keys: ${{ runner.os }}-jri-
+
+      - name: Cache Go binaries
+        uses: actions/cache@v4
+        if: ${{ hashFiles('**/src/**') != '' }}
+        with:
+          path: '**/.go/go*'
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.mod') }}
+          restore-keys: ${{ runner.os }}-go-
 
       # Caches SonarCloud dependencies to speed up the analysis process.
       - name: Cache SonarCloud packages
@@ -70,7 +93,7 @@ jobs:
           MAVEN_USERNAME: ${{ secrets.CENTRAL_USER }}
           MAVEN_CENTRAL_TOKEN: ${{ secrets.CENTRAL_PASSWORD }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_SECRET_KEY_PASSWORD }}
-        run: mvn deploy -Prelease -DskipTests
+        run: ./mvnw deploy -Prelease -DskipTests
 
       # Extracts release data from the changelog and prepares the release body.
       - name: Recovery release data

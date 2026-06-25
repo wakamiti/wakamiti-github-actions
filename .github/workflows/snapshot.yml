@@ -22,7 +22,7 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '25'
-          cache: maven
+          cache: 'maven'
 
       # Caches Maven settings file to avoid re-downloading it.
       - name: Cache Maven settings
@@ -39,34 +39,108 @@ jobs:
           key: maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: maven-
 
-      # Verifies if the current version is a snapshot. If snapshot, sets package
-      # identifier in the environment variable
+      # Calculates hash of wakamiti-parent pom from local maven repo
+      - name: Calculate Parent POM Hash
+        id: parent-hash
+        run: |
+          HASH=$(find ~/.m2/repository -name "wakamiti-parent-*.pom" -type f -exec sha256sum {} + 2>/dev/null | awk '{print $1}' | sort | sha256sum | awk '{print $1}')
+          echo "hash=${HASH:-initial}" >> $GITHUB_OUTPUT
+
+      - name: Cache Java JRI
+        uses: actions/cache@v4
+        if: ${{ hashFiles('**/src/**') != '' }}
+        with:
+          path: '**/.jri*'
+          key: ${{ runner.os }}-jri-${{ steps.parent-hash.outputs.hash }}
+          restore-keys: ${{ runner.os }}-jri-
+
+      - name: Cache Go binaries
+        uses: actions/cache@v4
+        if: ${{ hashFiles('**/src/**') != '' }}
+        with:
+          path: '**/.go/go*'
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.mod') }}
+          restore-keys: ${{ runner.os }}-go-
+
+      # Verifies if the current version is a snapshot. If snapshot, collects
+      # package identifiers for deployable modules in the reactor.
       - name: Check Snapshot
         run: |
-          version=$(mvn -q help:evaluate -Dexpression=project.version -DforceStdout)
+          version=$(./mvnw -q help:evaluate -Dexpression=project.version -DforceStdout)
           if [[ $version == *-SNAPSHOT ]]; then
-            groupId=$(mvn -q help:evaluate -Dexpression=project.groupId -DforceStdout)
-            artifactId=$(mvn -q help:evaluate -Dexpression=project.artifactId -DforceStdout)
-            echo "PACKAGE=${groupId}.${artifactId}" >> $GITHUB_ENV
+            mapfile -t packages < <(
+              ./mvnw -q org.codehaus.mojo:exec-maven-plugin:3.6.1:exec \
+                -Dexec.executable=echo \
+                -Dexec.args='${project.groupId}.${project.artifactId}|${project.packaging}|${maven.deploy.skip}' \
+              | awk -F'|' '
+                  BEGIN { OFS="" }
+                  {
+                    gsub(/^[[:space:]]+|[[:space:]]+$/, "", $1)
+                    gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2)
+                    gsub(/^[[:space:]]+|[[:space:]]+$/, "", $3)
+                    skip = tolower($3)
+                    if (NF == 3 && $1 ~ /^[[:alnum:]_.-]+\.[[:alnum:]_.-]+$/ && skip != "true") print $1
+                  }
+                ' \
+              | sort -u
+            )
+
+            if [[ ${#packages[@]} -gt 0 ]]; then
+              {
+                echo "PACKAGES<<EOF"
+                printf '%s\n' "${packages[@]}"
+                echo "EOF"
+              } >> "$GITHUB_ENV"
+            else
+              echo "::warning::snapshot version detected but no deployable packages found in reactor"
+            fi
           else
             echo "::warning::non-snapshot version $version deployment ignored"
           fi
 
-      # Deletes old versions of the package from Maven repository. Only runs if
-      # a valid package is detected
+      # Deletes old versions of the packages from Maven repository. Only runs if
+      # valid package names are detected
+      - name: Filter existing packages
+        if: env.PACKAGES != ''
+        run: |
+          mapfile -t existing_packages < <(
+            while IFS= read -r package; do
+              [[ -z "$package" ]] && continue
+              status=$(curl -s -o /dev/null -w "%{http_code}" \
+                -H "Authorization: Bearer $GITHUB_TOKEN" \
+                -H "Accept: application/vnd.github+json" \
+                "https://api.github.com/orgs/wakamiti/packages/maven/$package")
+              if [[ "$status" == "200" ]]; then
+                echo "$package"
+              else
+                echo "::notice::Skipping package '$package' (not found in GitHub Packages, HTTP $status)" >&2
+              fi
+            done <<< "${PACKAGES}"
+          )
+
+          if [[ ${#existing_packages[@]} -gt 0 ]]; then
+            {
+              echo "PACKAGES_TO_DELETE<<EOF"
+              printf '%s\n' "${existing_packages[@]}"
+              echo "EOF"
+            } >> "$GITHUB_ENV"
+          else
+            echo "::notice::No existing packages found to delete"
+          fi
+
       - name: Remove old packages
         uses: smartsquaregmbh/delete-old-packages@v0.8.1
-        if: env.PACKAGE != ''
+        if: env.PACKAGES_TO_DELETE != ''
         continue-on-error: true
         with:
           organization: wakamiti
           type: maven
           keep: 0
-          names: ${{ env.PACKAGE }}
+          names: ${{ env.PACKAGES_TO_DELETE }}
 
-      # Builds and deploys the snapshot to Maven repository. Only runs if a
-      # valid package is detected
+      # Builds and deploys the snapshot to Maven repository. Only runs if valid
+      # package names are detected
       - name: Build and Deploy
-        if: env.PACKAGE != ''
+        if: env.PACKAGES != ''
         run: |
-          mvn deploy -DskipTests 
+          ./mvnw deploy -DskipTests 

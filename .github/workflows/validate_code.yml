@@ -43,7 +43,7 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '25'
-          cache: maven
+          cache: 'maven'
 
       # Caches Maven settings file to avoid re-downloading it.
       - name: Cache Maven settings
@@ -60,6 +60,28 @@ jobs:
           key: maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: maven-
 
+      # Calculates hash of wakamiti-parent pom from local maven repo
+      - name: Calculate Parent POM Hash
+        id: parent-hash
+        run: |
+          HASH=$(find ~/.m2/repository -name "wakamiti-parent-*.pom" -type f -exec sha256sum {} + 2>/dev/null | awk '{print $1}' | sort | sha256sum | awk '{print $1}')
+          echo "hash=${HASH:-initial}" >> $GITHUB_OUTPUT
+      - name: Cache Java JRI
+        uses: actions/cache@v4
+        if: ${{ hashFiles('**/src/**') != '' }}
+        with:
+          path: '**/.jri*'
+          key: ${{ runner.os }}-jri-${{ steps.parent-hash.outputs.hash }}
+          restore-keys: ${{ runner.os }}-jri-
+
+      - name: Cache Go binaries
+        uses: actions/cache@v4
+        if: ${{ hashFiles('**/src/**') != '' }}
+        with:
+          path: '**/.go/go*'
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.mod') }}
+          restore-keys: ${{ runner.os }}-go-
+
       # Caches SonarCloud dependencies to speed up the analysis process.
       - name: Cache SonarCloud packages
         uses: actions/cache@v4
@@ -68,10 +90,10 @@ jobs:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
-
+          
       # Builds the project and runs tests using Maven.
       - name: Build & Test
-        run: mvn -Pjlink initialize && mvn -B clean install
+        run: ./mvnw -B clean install
 
       # Performs SonarQube analysis if the 'analyze' input is true and there are
       # changes in the source files.
@@ -81,7 +103,7 @@ jobs:
           SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          mvn -B -ntp org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+          ./mvnw -B -ntp org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
             -Dsonar.host.url=$SONAR_HOST_URL \
             -Dsonar.organization=wakamiti \
             -Dsonar.projectKey=${{ github.event.repository.name }} \
