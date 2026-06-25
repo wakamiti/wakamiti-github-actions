@@ -27,12 +27,11 @@ jobs:
         with:
           ref: main
 
-      # Sets up Java Development Kit (JDK) version 25 using the Oracle
-      # distribution.
+      # Sets up Java Development Kit (JDK) version 25
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
-          distribution: 'oracle'
+          distribution: 'temurin'
           java-version: '25'
           cache: maven
 

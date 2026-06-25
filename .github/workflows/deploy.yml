@@ -34,11 +34,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Sets up Java Development Kit (JDK) version 25 using the Oracle
-      # distribution.
+      # Sets up Java Development Kit (JDK) version 25
       - uses: actions/setup-java@v4
         with:
-          distribution: 'oracle'
+          distribution: 'temurin'
           java-version: '25'
           cache: maven
           server-id: central
