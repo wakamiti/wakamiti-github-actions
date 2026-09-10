@@ -4,8 +4,6 @@
 on:
   workflow_call:
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -17,7 +15,7 @@ jobs:
     steps:
 
       # Checks out the repository code.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       # Sets up Java Development Kit (JDK) version 26
       - name: Set up JDK
