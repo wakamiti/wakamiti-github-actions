@@ -21,8 +21,6 @@ on:
         required: true
         type: string
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 jobs:
   init_release:
     runs-on: ubuntu-latest
@@ -35,7 +33,7 @@ jobs:
 
       # Checks out the repository code using the develop branch.
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: develop
 
@@ -49,14 +47,14 @@ jobs:
 
       # Caches Maven settings file to avoid re-downloading it.
       - name: Cache Maven settings
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.m2/settings.xml
           key: settings-xml
 
       # Caches Maven dependencies to reduce build time.
       - name: Cache Maven packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.m2/repository
           key: maven-${{ hashFiles('**/pom.xml') }}

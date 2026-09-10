@@ -16,8 +16,6 @@ on:
         required: true
         type: string
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 jobs:
   init_hotfix:
     runs-on: ubuntu-latest
@@ -25,7 +23,7 @@ jobs:
     steps:
 
       # Checks out the repository code using the main branch
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: main
 
@@ -39,14 +37,14 @@ jobs:
 
       # Caches Maven settings file to avoid re-downloading it.
       - name: Cache Maven settings
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.m2/settings.xml
           key: settings-xml
 
       # Caches Maven dependencies to reduce build time.
       - name: Cache Maven packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.m2/repository
           key: maven-${{ hashFiles('**/pom.xml') }}

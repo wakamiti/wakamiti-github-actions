@@ -5,8 +5,6 @@
 on:
   workflow_call:
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 jobs:
   config_maven:
     runs-on: ubuntu-latest
@@ -18,7 +16,7 @@ jobs:
       # Attempts to restore cached settings.xml file.
       - name: Cache Maven settings
         id: maven-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.m2/settings.xml
           key: settings-xml

@@ -20,8 +20,6 @@ on:
         required: true
         type: string
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -32,7 +30,7 @@ jobs:
     steps:
 
       # Checks out the full history of repository code.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -50,7 +48,7 @@ jobs:
 
       # Caches Maven dependencies to reduce build time.
       - name: Cache Maven packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.m2/repository
           key: maven-${{ hashFiles('**/pom.xml') }}
@@ -64,7 +62,7 @@ jobs:
           echo "hash=${HASH:-initial}" >> $GITHUB_OUTPUT
 
       - name: Cache Java JRI
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         if: ${{ hashFiles('**/src/**') != '' }}
         with:
           path: '**/.jri*'
@@ -72,7 +70,7 @@ jobs:
           restore-keys: ${{ runner.os }}-jri-
 
       - name: Cache Go binaries
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         if: ${{ hashFiles('**/src/**') != '' }}
         with:
           path: '**/.go/go*'
@@ -81,7 +79,7 @@ jobs:
 
       # Caches SonarCloud dependencies to speed up the analysis process.
       - name: Cache SonarCloud packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         if: ${{ hashFiles('**/src/**') != '' }}
         with:
           path: ~/.sonar/cache
