@@ -23,13 +23,13 @@ jobs:
     steps:
 
       # Checks out the repository code using the main branch
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: main
 
       # Sets up Java Development Kit (JDK) version 26
       - name: Set up JDK
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: 'temurin'
           java-version: '26'
@@ -37,14 +37,14 @@ jobs:
 
       # Caches Maven settings file to avoid re-downloading it.
       - name: Cache Maven settings
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.m2/settings.xml
           key: settings-xml
 
       # Caches Maven dependencies to reduce build time.
       - name: Cache Maven packages
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.m2/repository
           key: maven-${{ hashFiles('**/pom.xml') }}
