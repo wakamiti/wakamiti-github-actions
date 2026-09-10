@@ -30,12 +30,12 @@ jobs:
     steps:
 
       # Checks out the full history of repository code.
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
       # Sets up Java Development Kit (JDK) version 26
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v6
         with:
           distribution: 'temurin'
           java-version: '26'
@@ -48,7 +48,7 @@ jobs:
 
       # Caches Maven dependencies to reduce build time.
       - name: Cache Maven packages
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.m2/repository
           key: maven-${{ hashFiles('**/pom.xml') }}
@@ -62,7 +62,7 @@ jobs:
           echo "hash=${HASH:-initial}" >> $GITHUB_OUTPUT
 
       - name: Cache Java JRI
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         if: ${{ hashFiles('**/src/**') != '' }}
         with:
           path: '**/.jri*'
@@ -70,7 +70,7 @@ jobs:
           restore-keys: ${{ runner.os }}-jri-
 
       - name: Cache Go binaries
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         if: ${{ hashFiles('**/src/**') != '' }}
         with:
           path: '**/.go/go*'
@@ -79,7 +79,7 @@ jobs:
 
       # Caches SonarCloud dependencies to speed up the analysis process.
       - name: Cache SonarCloud packages
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         if: ${{ hashFiles('**/src/**') != '' }}
         with:
           path: ~/.sonar/cache

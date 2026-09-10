@@ -27,6 +27,7 @@
 --artifact-server-path ${CACHES}/.artifact
 --cache-server-path ${CACHES}/.actcache
 --bind
+--no-skip-checkout
 --log-prefix-job-id
 --action-offline-mode
 --insecure-secrets
