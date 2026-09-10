@@ -26,6 +26,8 @@ on:
         type: string
         required: true
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 jobs:
   pr:
     runs-on: ubuntu-latest

@@ -20,6 +20,8 @@ on:
         required: true
         type: string
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -34,11 +36,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Sets up Java Development Kit (JDK) version 25
-      - uses: actions/setup-java@v4
+      # Sets up Java Development Kit (JDK) version 26
+      - uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
-          java-version: '25'
+          java-version: '26'
           cache: 'maven'
           server-id: central
           server-username: MAVEN_USERNAME
