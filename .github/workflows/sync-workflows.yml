@@ -10,6 +10,8 @@ on:
       - 'src/**'
       - '.github/syncs.yml'
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 jobs:
   sync:
     runs-on: ubuntu-latest
